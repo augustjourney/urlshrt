@@ -20,21 +20,21 @@ type Repo struct{}
 
 var repo Repo
 
-var URLS_IN_MEMORY []Url
+var UrlsInMemory []Url
 
 func (r *Repo) Create(short string, original string) {
 	url := Url{
 		Short:    short,
 		Original: original,
 	}
-	URLS_IN_MEMORY = append(URLS_IN_MEMORY, url)
+	UrlsInMemory = append(UrlsInMemory, url)
 }
 
 func (r *Repo) Get(short string) *Url {
 
-	for i := 0; i < len(URLS_IN_MEMORY); i++ {
-		if URLS_IN_MEMORY[i].Short == short {
-			return &URLS_IN_MEMORY[i]
+	for i := 0; i < len(UrlsInMemory); i++ {
+		if UrlsInMemory[i].Short == short {
+			return &UrlsInMemory[i]
 		}
 	}
 
@@ -49,9 +49,9 @@ type Service struct {
 
 var service Service
 
-func (s *Service) Shorten(originalUrl string) string {
+func (s *Service) Shorten(originalURL string) string {
 	short := "EwHXdJfB"
-	s.repo.Create(short, originalUrl)
+	s.repo.Create(short, originalURL)
 	return BASE_URL + "/" + short
 }
 
@@ -76,10 +76,10 @@ func (c *Controller) urlHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		originalUrl := string(body)
+		originalURL := string(body)
 
 		// Make a short url
-		short := c.service.Shorten(originalUrl)
+		short := c.service.Shorten(originalURL)
 
 		// Response
 		w.Header().Add("Content-Type", "text/plain")
@@ -92,9 +92,9 @@ func (c *Controller) urlHandler(w http.ResponseWriter, r *http.Request) {
 		short := r.URL.Path[1:]
 
 		// Find original
-		err, originalUrl := c.service.FindOriginal(short)
+		err, originalURL := c.service.FindOriginal(short)
 
-		fmt.Println("originalUrl", originalUrl)
+		fmt.Println("originalURL", originalURL)
 
 		if err != nil {
 			// Response
@@ -105,10 +105,10 @@ func (c *Controller) urlHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Response
-		w.Header().Add("Location", originalUrl)
+		w.Header().Add("Location", originalURL)
 		w.Header().Add("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusTemporaryRedirect)
-		w.Write([]byte(originalUrl))
+		w.Write([]byte(originalURL))
 		return
 	} else {
 		w.Header().Add("Content-Type", "text/plain")
@@ -120,7 +120,7 @@ func (c *Controller) urlHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 
-	URLS_IN_MEMORY = make([]Url, 0)
+	UrlsInMemory = make([]Url, 0)
 
 	repo = Repo{}
 
