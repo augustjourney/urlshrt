@@ -58,7 +58,7 @@ func (s *Service) Shorten(originalURL string) string {
 func (s *Service) FindOriginal(short string) (string, error) {
 	url := s.repo.Get(short)
 	if url == nil {
-		return "", errors.New("Url not found")
+		return "", errors.New("url not found")
 	}
 	return url.Original, nil
 }
