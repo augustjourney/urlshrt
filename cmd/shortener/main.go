@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-const BASE_URL = "http://localhost:8080"
+const BaseURL = "http://localhost:8080"
 
-type Url struct {
+type URL struct {
 	Short    string
 	Original string
 }
@@ -20,17 +20,17 @@ type Repo struct{}
 
 var repo Repo
 
-var UrlsInMemory []Url
+var UrlsInMemory []URL
 
 func (r *Repo) Create(short string, original string) {
-	url := Url{
+	url := URL{
 		Short:    short,
 		Original: original,
 	}
 	UrlsInMemory = append(UrlsInMemory, url)
 }
 
-func (r *Repo) Get(short string) *Url {
+func (r *Repo) Get(short string) *URL {
 
 	for i := 0; i < len(UrlsInMemory); i++ {
 		if UrlsInMemory[i].Short == short {
@@ -52,15 +52,15 @@ var service Service
 func (s *Service) Shorten(originalURL string) string {
 	short := "EwHXdJfB"
 	s.repo.Create(short, originalURL)
-	return BASE_URL + "/" + short
+	return BaseURL + "/" + short
 }
 
-func (s *Service) FindOriginal(short string) (error, string) {
+func (s *Service) FindOriginal(short string) (string, error) {
 	url := s.repo.Get(short)
 	if url == nil {
-		return errors.New("Url not found"), ""
+		return "", errors.New("Url not found")
 	}
-	return nil, url.Original
+	return url.Original, nil
 }
 
 // Http Controller
@@ -92,7 +92,7 @@ func (c *Controller) urlHandler(w http.ResponseWriter, r *http.Request) {
 		short := r.URL.Path[1:]
 
 		// Find original
-		err, originalURL := c.service.FindOriginal(short)
+		originalURL, err := c.service.FindOriginal(short)
 
 		fmt.Println("originalURL", originalURL)
 
@@ -120,7 +120,7 @@ func (c *Controller) urlHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 
-	UrlsInMemory = make([]Url, 0)
+	UrlsInMemory = make([]URL, 0)
 
 	repo = Repo{}
 
