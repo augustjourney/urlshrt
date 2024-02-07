@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -30,15 +29,20 @@ func (c *Controller) CreateURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) GetURL(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	// Parse short url
 	short := r.URL.Path[1:]
 
 	// Find original
 	originalURL, err := c.service.FindOriginal(short)
 
-	if err != nil {
-		// Response
-		fmt.Println(err)
+	if err != nil || originalURL == "" {
 		w.Header().Add("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusBadRequest)
 		return
