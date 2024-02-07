@@ -12,12 +12,23 @@ type Controller struct {
 }
 
 func (c *Controller) CreateURL(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	// Getting url from text plain body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}
 	originalURL := string(body)
+
+	if originalURL == "" {
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	// Make a short url
 	short := c.service.Shorten(originalURL)

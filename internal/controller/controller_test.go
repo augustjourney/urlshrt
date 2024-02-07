@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
 	"github.com/augustjourney/urlshrt/internal/service"
@@ -51,7 +54,7 @@ func TestGetURL(t *testing.T) {
 			shortURL: "123",
 		},
 		{
-			name:   "Found url",
+			name:   "Found url 2",
 			method: http.MethodGet,
 			want: want{
 				code:        307,
@@ -87,26 +90,6 @@ func TestGetURL(t *testing.T) {
 			},
 			shortURL: "321",
 		},
-		{
-			name:   "Found URL — response",
-			method: http.MethodGet,
-			want: want{
-				code:        307,
-				contentType: "text/plain",
-				response:    "http://yandex.ru",
-			},
-			shortURL: "123",
-		},
-		{
-			name:   "Found URL — response 2",
-			method: http.MethodGet,
-			want: want{
-				code:        307,
-				contentType: "text/plain",
-				response:    "http://google.com",
-			},
-			shortURL: "321",
-		},
 	}
 
 	for _, tt := range tests {
@@ -120,7 +103,75 @@ func TestGetURL(t *testing.T) {
 			err = res.Body.Close()
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)
-			assert.Equal(t, tt.want.response, res.Header.Get("Location"))
+			if tt.method == http.MethodGet {
+				assert.Equal(t, tt.want.response, res.Header.Get("Location"))
+			}
+		})
+	}
+}
+
+func TestCreateURL(t *testing.T) {
+	repo := inmemory.New()
+	service := service.New(&repo)
+	controller := New(&service)
+
+	type want struct {
+		code        int
+		contentType string
+	}
+
+	tests := []struct {
+		name        string
+		want        want
+		originalURL string
+		method      string
+	}{
+		{
+			name: "URL created",
+			want: want{
+				code:        201,
+				contentType: "text/plain",
+			},
+			originalURL: "http://yandex.ru",
+			method:      http.MethodPost,
+		},
+		{
+			name: "Wront HTTP method",
+			want: want{
+				code:        400,
+				contentType: "text/plain",
+			},
+			originalURL: "http://yandex.ru",
+			method:      http.MethodPut,
+		},
+		{
+			name: "Empty body",
+			want: want{
+				code:        400,
+				contentType: "text/plain",
+			},
+			originalURL: "",
+			method:      http.MethodPost,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url := "/"
+			request := httptest.NewRequest(tt.method, url, bytes.NewReader([]byte(tt.originalURL)))
+			w := httptest.NewRecorder()
+			controller.CreateURL(w, request)
+			result := w.Result()
+			resultBody, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+
+			shortMatch, err := regexp.Match(`\/\w+$`, resultBody)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want.code, result.StatusCode)
+			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
+			if tt.method == http.MethodPost && tt.originalURL != "" {
+				assert.Equal(t, true, shortMatch)
+			}
 		})
 	}
 }
