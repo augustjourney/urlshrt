@@ -172,6 +172,7 @@ func TestCreateURL(t *testing.T) {
 			if tt.method == http.MethodPost && tt.originalURL != "" {
 				assert.Equal(t, true, shortMatch)
 			}
+			result.Body.Close()
 		})
 	}
 }
