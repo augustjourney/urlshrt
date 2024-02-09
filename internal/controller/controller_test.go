@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
@@ -18,6 +19,8 @@ func TestGetURL(t *testing.T) {
 	repo := inmemory.New()
 	service := service.New(&repo)
 	controller := New(&service)
+
+	app := app.New(&controller)
 
 	repo.Create("321", "http://google.com")
 	repo.Create("123", "http://yandex.ru")
@@ -97,10 +100,7 @@ func TestGetURL(t *testing.T) {
 			url := "/" + tt.shortURL
 			req, err := http.NewRequest(tt.method, url, nil)
 			require.NoError(t, err)
-			w := httptest.NewRecorder()
-			controller.GetURL(w, req)
-			res := w.Result()
-			err = res.Body.Close()
+			res, err := app.Test(req, 1)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if tt.method == http.MethodGet {
@@ -114,6 +114,8 @@ func TestCreateURL(t *testing.T) {
 	repo := inmemory.New()
 	service := service.New(&repo)
 	controller := New(&service)
+
+	app := app.New(&controller)
 
 	type want struct {
 		code        int
@@ -159,12 +161,10 @@ func TestCreateURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			url := "/"
 			request := httptest.NewRequest(tt.method, url, bytes.NewReader([]byte(tt.originalURL)))
-			w := httptest.NewRecorder()
-			controller.CreateURL(w, request)
-			result := w.Result()
+			result, err := app.Test(request, 1)
+			require.NoError(t, err)
 			resultBody, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
-
 			shortMatch, err := regexp.Match(`\/\w+$`, resultBody)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, result.StatusCode)
