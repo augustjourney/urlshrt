@@ -1,69 +1,62 @@
 package controller
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/augustjourney/urlshrt/internal/service"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Controller struct {
 	service service.IService
 }
 
-func (c *Controller) CreateURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+func (c *Controller) BadRequest(ctx *fiber.Ctx) error {
+	ctx.Set("Content-type", "text/plain")
+	return ctx.SendStatus(400)
+}
+
+func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
+	ctx.Set("Content-type", "text/plain")
+	if ctx.Method() != http.MethodPost {
+		return ctx.SendStatus(400)
 	}
 	// Getting url from text plain body
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-	originalURL := string(body)
+
+	originalURL := string(ctx.Body())
 
 	if originalURL == "" {
-		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return ctx.SendStatus(400)
 	}
 
 	// Make a short url
 	short := c.service.Shorten(originalURL)
 
 	// Response
-	w.Header().Add("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(short))
+	return ctx.Status(201).SendString(short)
 }
 
-func (c *Controller) GetURL(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 
-	if r.Method != http.MethodGet {
-		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	ctx.Set("Content-type", "text/plain")
+
+	if ctx.Method() != http.MethodGet {
+		return ctx.SendStatus(400)
 	}
 
 	// Parse short url
-	short := r.URL.Path[1:]
+	short := ctx.Params("short")
 
 	// Find original
 	originalURL, err := c.service.FindOriginal(short)
 
 	if err != nil || originalURL == "" {
-		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return ctx.SendStatus(400)
 	}
 
 	// Response
-	w.Header().Add("Location", originalURL)
-	w.Header().Add("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusTemporaryRedirect)
-	w.Write([]byte(originalURL))
+	ctx.Location(originalURL)
+	return ctx.Status(307).SendString(originalURL)
 }
 
 func New(service service.IService) Controller {
