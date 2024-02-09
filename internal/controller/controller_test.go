@@ -103,6 +103,7 @@ func TestGetURL(t *testing.T) {
 			res, err := app.Test(req, 1)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)
+			res.Body.Close()
 			if tt.method == http.MethodGet {
 				assert.Equal(t, tt.want.response, res.Header.Get("Location"))
 			}
@@ -166,13 +167,13 @@ func TestCreateURL(t *testing.T) {
 			resultBody, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
 			shortMatch, err := regexp.Match(`\/\w+$`, resultBody)
+			result.Body.Close()
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, result.StatusCode)
 			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
 			if tt.method == http.MethodPost && tt.originalURL != "" {
 				assert.Equal(t, true, shortMatch)
 			}
-			result.Body.Close()
 		})
 	}
 }
