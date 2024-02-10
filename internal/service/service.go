@@ -3,13 +3,13 @@ package service
 import (
 	"errors"
 
+	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/storage"
 )
 
-const BaseURL = "http://localhost:8080"
-
 type Service struct {
-	repo storage.IRepo
+	repo   storage.IRepo
+	config *config.Config
 }
 
 type IService interface {
@@ -20,7 +20,7 @@ type IService interface {
 func (s *Service) Shorten(originalURL string) string {
 	short := "EwHXdJfB"
 	s.repo.Create(short, originalURL)
-	return BaseURL + "/" + short
+	return s.config.BaseURL + "/" + short
 }
 
 func (s *Service) FindOriginal(short string) (string, error) {
@@ -31,8 +31,9 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	return url.Original, nil
 }
 
-func New(repo storage.IRepo) Service {
+func New(repo storage.IRepo, config *config.Config) Service {
 	return Service{
-		repo: repo,
+		repo:   repo,
+		config: config,
 	}
 }

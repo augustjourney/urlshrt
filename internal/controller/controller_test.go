@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/augustjourney/urlshrt/internal/app"
+	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
@@ -16,8 +17,11 @@ import (
 )
 
 func TestGetURL(t *testing.T) {
+
+	config := config.New()
+
 	repo := inmemory.New()
-	service := service.New(&repo)
+	service := service.New(&repo, config)
 	controller := New(&service)
 
 	app := app.New(&controller)
@@ -112,8 +116,9 @@ func TestGetURL(t *testing.T) {
 }
 
 func TestCreateURL(t *testing.T) {
+	config := config.New()
 	repo := inmemory.New()
-	service := service.New(&repo)
+	service := service.New(&repo, config)
 	controller := New(&service)
 
 	app := app.New(&controller)
