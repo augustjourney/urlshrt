@@ -19,9 +19,9 @@ func main() {
 	c := controller.New(&service)
 	server := app.New(&c)
 
-	fmt.Printf("Launching on port %s", config.Port)
+	fmt.Printf("Launching on %s", config.ServerAddress)
 
-	err := server.Listen(":" + config.Port)
+	err := server.Listen(config.ServerAddress)
 	if err != nil {
 		panic(err)
 	}
