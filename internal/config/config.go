@@ -1,10 +1,13 @@
 package config
 
-import "flag"
+import (
+	"flag"
+	"os"
+)
 
 type Config struct {
-	BaseURL string
-	Port    string
+	BaseURL       string `env:"BASE_URL"`
+	ServerAddress string `env:"SERVER_ADDRESS"`
 }
 
 var config Config
@@ -15,20 +18,29 @@ func New() *Config {
 	}
 
 	defaults := map[string]string{
-		"baseURL": "http://localhost:8080",
-		"port":    "8080",
+		"baseURL":       "http://localhost:8080",
+		"serverAddress": "localhost:8080",
 	}
 
 	var (
-		port    = flag.String("a", defaults["port"], "Port on which server is running")
-		baseURL = flag.String("b", defaults["baseURL"], "Base URL which short urls will be accessible")
+		flagServerAddress = flag.String("a", defaults["serverAddress"], "Server address on which server is running")
+		flagBaseURL       = flag.String("b", defaults["baseURL"], "Base URL which short urls will be accessible")
 	)
 
 	flag.Parse()
 
 	config = Config{
-		Port:    *port,
-		BaseURL: *baseURL,
+		ServerAddress: *flagServerAddress,
+		BaseURL:       *flagBaseURL,
+	}
+	serverAddress := os.Getenv("SERVER_ADDRESS")
+
+	if serverAddress != "" {
+		config.ServerAddress = serverAddress
+	}
+
+	if baseURL := os.Getenv("BASE_URL"); baseURL != "" {
+		config.BaseURL = baseURL
 	}
 
 	return &config
