@@ -33,9 +33,8 @@ func New() *Config {
 		ServerAddress: *flagServerAddress,
 		BaseURL:       *flagBaseURL,
 	}
-	serverAddress := os.Getenv("SERVER_ADDRESS")
 
-	if serverAddress != "" {
+	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {
 		config.ServerAddress = serverAddress
 	}
 
