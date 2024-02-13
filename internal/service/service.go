@@ -7,7 +7,7 @@ import (
 	"github.com/augustjourney/urlshrt/internal/storage"
 )
 
-var notFoundError = errors.New("url not found")
+var errNotFound = errors.New("url not found")
 
 type Service struct {
 	repo   storage.IRepo
@@ -28,7 +28,7 @@ func (s *Service) Shorten(originalURL string) string {
 func (s *Service) FindOriginal(short string) (string, error) {
 	url := s.repo.Get(short)
 	if url == nil {
-		return "", notFoundError
+		return "", errNotFound
 	}
 	return url.Original, nil
 }
