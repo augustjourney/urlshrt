@@ -45,7 +45,7 @@ func TestGetURL(t *testing.T) {
 			name:   "Not found url",
 			method: http.MethodGet,
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 			shortURL: "3453",
@@ -54,7 +54,7 @@ func TestGetURL(t *testing.T) {
 			name:   "Found url",
 			method: http.MethodGet,
 			want: want{
-				code:        307,
+				code:        http.StatusTemporaryRedirect,
 				contentType: "text/plain",
 				response:    "http://yandex.ru",
 			},
@@ -64,7 +64,7 @@ func TestGetURL(t *testing.T) {
 			name:   "Found url 2",
 			method: http.MethodGet,
 			want: want{
-				code:        307,
+				code:        http.StatusTemporaryRedirect,
 				contentType: "text/plain",
 				response:    "http://google.com",
 			},
@@ -74,7 +74,7 @@ func TestGetURL(t *testing.T) {
 			name:   "Method [PUT] not allowed",
 			method: http.MethodPut,
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 			shortURL: "321",
@@ -83,7 +83,7 @@ func TestGetURL(t *testing.T) {
 			name:   "Method [DELETE] not allowed",
 			method: http.MethodDelete,
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 			shortURL: "321",
@@ -92,7 +92,7 @@ func TestGetURL(t *testing.T) {
 			name:   "Method [POST] not allowed with shortURL",
 			method: http.MethodDelete,
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 			shortURL: "321",
@@ -137,7 +137,7 @@ func TestCreateURL(t *testing.T) {
 		{
 			name: "URL created",
 			want: want{
-				code:        201,
+				code:        http.StatusCreated,
 				contentType: "text/plain",
 			},
 			originalURL: "http://yandex.ru",
@@ -146,7 +146,7 @@ func TestCreateURL(t *testing.T) {
 		{
 			name: "Wront HTTP method",
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 			originalURL: "http://yandex.ru",
@@ -155,7 +155,7 @@ func TestCreateURL(t *testing.T) {
 		{
 			name: "Empty body",
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 			originalURL: "",

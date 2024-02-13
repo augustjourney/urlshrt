@@ -13,20 +13,20 @@ type Controller struct {
 
 func (c *Controller) BadRequest(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "text/plain")
-	return ctx.SendStatus(400)
+	return ctx.SendStatus(http.StatusBadRequest)
 }
 
 func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "text/plain")
 	if ctx.Method() != http.MethodPost {
-		return ctx.SendStatus(400)
+		return ctx.SendStatus(http.StatusBadRequest)
 	}
 	// Getting url from text plain body
 
 	originalURL := string(ctx.Body())
 
 	if originalURL == "" {
-		return ctx.SendStatus(400)
+		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
 	// Make a short url
@@ -41,7 +41,7 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "text/plain")
 
 	if ctx.Method() != http.MethodGet {
-		return ctx.SendStatus(400)
+		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
 	// Parse short url
@@ -51,12 +51,12 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 	originalURL, err := c.service.FindOriginal(short)
 
 	if err != nil || originalURL == "" {
-		return ctx.SendStatus(400)
+		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
 	// Response
 	ctx.Location(originalURL)
-	return ctx.Status(307).SendString(originalURL)
+	return ctx.Status(http.StatusTemporaryRedirect).SendString(originalURL)
 }
 
 func New(service service.IService) Controller {
