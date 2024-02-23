@@ -10,6 +10,7 @@ import (
 
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
+	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,7 @@ import (
 func TestGetURL(t *testing.T) {
 
 	config := config.New()
+	logger.New()
 
 	repo := inmemory.New()
 	service := service.New(&repo, config)
