@@ -233,7 +233,7 @@ func TestApiCreateURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			url := "/api/shorten"
 
-			body, _ := json.Marshal(ApiCreateURLBody{
+			body, _ := json.Marshal(APICreateURLBody{
 				URL: tt.originalURL,
 			})
 
@@ -243,7 +243,7 @@ func TestApiCreateURL(t *testing.T) {
 			result, err := app.Test(request, 1)
 			require.NoError(t, err)
 
-			var resultBody ApiCreateURLResult
+			var resultBody APICreateURLResult
 
 			err = json.NewDecoder(result.Body).Decode(&resultBody)
 			result.Body.Close()

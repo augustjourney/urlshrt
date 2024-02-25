@@ -13,11 +13,11 @@ type Controller struct {
 	service service.IService
 }
 
-type ApiCreateURLBody struct {
+type APICreateURLBody struct {
 	URL string `json:"url"`
 }
 
-type ApiCreateURLResult struct {
+type APICreateURLResult struct {
 	Result string `json:"result"`
 }
 
@@ -46,14 +46,14 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusCreated).SendString(short)
 }
 
-func (c *Controller) ApiCreateURL(ctx *fiber.Ctx) error {
+func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "application/json")
 
 	if ctx.Method() != http.MethodPost {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
-	var body ApiCreateURLBody
+	var body APICreateURLBody
 
 	err := json.Unmarshal(ctx.Body(), &body)
 
@@ -65,7 +65,7 @@ func (c *Controller) ApiCreateURL(ctx *fiber.Ctx) error {
 	// Make a short url
 	result := c.service.Shorten(body.URL)
 
-	response, err := json.Marshal(ApiCreateURLResult{
+	response, err := json.Marshal(APICreateURLResult{
 		Result: result,
 	})
 

@@ -8,7 +8,7 @@ import (
 type Controller interface {
 	BadRequest(ctx *fiber.Ctx) error
 	CreateURL(ctx *fiber.Ctx) error
-	ApiCreateURL(ctx *fiber.Ctx) error
+	APICreateURL(ctx *fiber.Ctx) error
 	GetURL(ctx *fiber.Ctx) error
 }
 
@@ -18,7 +18,7 @@ func New(c Controller) *fiber.App {
 	app.Use(logger.RequestLogger)
 
 	app.Post("/", c.CreateURL)
-	app.Post("/api/shorten", c.ApiCreateURL)
+	app.Post("/api/shorten", c.APICreateURL)
 	app.Get("/:short", c.GetURL)
 	app.Use("/*", c.BadRequest)
 
