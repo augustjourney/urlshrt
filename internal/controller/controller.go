@@ -1,14 +1,24 @@
 package controller
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Controller struct {
 	service service.IService
+}
+
+type ApiCreateURLBody struct {
+	URL string `json:"url"`
+}
+
+type ApiCreateURLResult struct {
+	Result string `json:"result"`
 }
 
 func (c *Controller) BadRequest(ctx *fiber.Ctx) error {
@@ -34,6 +44,38 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 
 	// Response
 	return ctx.Status(201).SendString(short)
+}
+
+func (c *Controller) ApiCreateURL(ctx *fiber.Ctx) error {
+	ctx.Set("Content-type", "application/json")
+	if ctx.Method() != http.MethodPost {
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+	// Getting url from json body
+
+	var body ApiCreateURLBody
+
+	err := json.Unmarshal(ctx.Body(), &body)
+
+	if err != nil || body.URL == "" {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	// Make a short url
+	short := c.service.Shorten(body.URL)
+
+	resp, err := json.Marshal(ApiCreateURLResult{
+		Result: short,
+	})
+
+	if err != nil {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	// Response
+	return ctx.Status(201).Send(resp)
 }
 
 func (c *Controller) GetURL(ctx *fiber.Ctx) error {
