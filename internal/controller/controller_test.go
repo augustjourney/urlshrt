@@ -2,6 +2,8 @@ package controller
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -180,6 +182,78 @@ func TestCreateURL(t *testing.T) {
 			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
 			if tt.method == http.MethodPost && tt.originalURL != "" {
 				assert.Equal(t, true, shortMatch)
+			}
+		})
+	}
+}
+
+func TestApiCreateURL(t *testing.T) {
+	config := config.New()
+	repo := inmemory.New()
+	service := service.New(&repo, config)
+	controller := New(&service)
+
+	app := app.New(&controller)
+
+	type want struct {
+		code        int
+		contentType string
+		result      bool
+	}
+
+	tests := []struct {
+		name        string
+		want        want
+		originalURL string
+		method      string
+	}{
+		{
+			name: "URL created",
+			want: want{
+				code:        http.StatusCreated,
+				contentType: "application/json",
+				result:      true,
+			},
+			originalURL: "http://yandex.ru",
+			method:      http.MethodPost,
+		},
+		{
+			name: "Empty body",
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: "application/json",
+				result:      false,
+			},
+			originalURL: "",
+			method:      http.MethodPost,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url := "/api/shorten"
+
+			body, _ := json.Marshal(ApiCreateURLBody{
+				URL: tt.originalURL,
+			})
+
+			request := httptest.NewRequest(tt.method, url, bytes.NewReader(body))
+			request.Header.Set("Content-Type", tt.want.contentType)
+
+			result, err := app.Test(request, 1)
+			require.NoError(t, err)
+
+			var resultBody ApiCreateURLResult
+
+			err = json.NewDecoder(result.Body).Decode(&resultBody)
+			result.Body.Close()
+
+			assert.Equal(t, tt.want.code, result.StatusCode)
+			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"), fmt.Sprintf("Content Type should be %s", tt.want.contentType))
+
+			if tt.want.result {
+				require.NoError(t, err)
+				assert.Equal(t, true, resultBody.Result != "", "Result url should not be empty")
 			}
 		})
 	}
