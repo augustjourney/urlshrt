@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/augustjourney/urlshrt/internal/logger"
+	"github.com/augustjourney/urlshrt/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,7 +15,7 @@ type Controller interface {
 func New(c Controller) *fiber.App {
 	app := fiber.New()
 
-	app.Use(logger.RequestLogger)
+	app.Use(middleware.RequestLogger)
 
 	app.Post("/", c.CreateURL)
 	app.Post("/api/shorten", c.APICreateURL)
