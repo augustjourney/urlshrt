@@ -16,6 +16,7 @@ func New(c Controller) *fiber.App {
 	app := fiber.New()
 
 	app.Use(middleware.RequestLogger)
+	app.Use(middleware.RequestCompress)
 
 	app.Post("/", c.CreateURL)
 	app.Post("/api/shorten", c.APICreateURL)
