@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"compress/gzip"
+	"io"
 	"strings"
 
 	"github.com/augustjourney/urlshrt/internal/logger"
@@ -10,8 +11,32 @@ import (
 )
 
 func RequestCompress(ctx *fiber.Ctx) error {
+
+	// Processing request compress
+	requestGzipped := strings.Contains(ctx.Get(fiber.HeaderContentEncoding), "gzip")
+
+	if requestGzipped && ctx.Method() != fiber.MethodGet {
+		bodyBytes := bytes.NewBuffer(ctx.Request().Body())
+
+		gzipWriter, err := gzip.NewReader(bodyBytes)
+
+		if err != nil {
+			return err
+		}
+
+		defer gzipWriter.Close()
+
+		body, err := io.ReadAll(gzipWriter)
+		if err != nil {
+			return err
+		}
+
+		ctx.Request().SetBody(body)
+	}
+
 	result := ctx.Next()
 
+	// Processing response compress
 	supportsGzip := strings.Contains(ctx.Get(fiber.HeaderAcceptEncoding), "gzip")
 
 	if !supportsGzip {
@@ -44,8 +69,6 @@ func RequestCompress(ctx *fiber.Ctx) error {
 	if err = gzipWriter.Close(); err != nil {
 		return err
 	}
-
-	ctx.Response().Header.Set("Content-Encoding", "gzip")
 
 	ctx.Response().SetBody(bodyBytes.Bytes())
 
