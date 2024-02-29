@@ -1,7 +1,10 @@
 package service
 
 import (
+	"crypto/sha256"
 	"errors"
+	"fmt"
+	"io"
 
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/storage"
@@ -20,7 +23,9 @@ type IService interface {
 }
 
 func (s *Service) Shorten(originalURL string) string {
-	short := "EwHXdJfB"
+	hash := sha256.New()
+	io.WriteString(hash, originalURL)
+	short := fmt.Sprintf("%x", hash.Sum(nil))[:10]
 	s.repo.Create(short, originalURL)
 	return s.config.BaseURL + "/" + short
 }
