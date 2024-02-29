@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,12 +15,14 @@ func RequestCompress(ctx *fiber.Ctx) error {
 	requestGzipped := strings.Contains(ctx.Get(fiber.HeaderContentEncoding), "gzip")
 
 	if requestGzipped && ctx.Method() != fiber.MethodGet {
-		bodyBytes := bytes.NewBuffer(ctx.Request().Body())
-
-		gzipWriter, err := gzip.NewReader(bodyBytes)
+		buf := bytes.NewBuffer(ctx.Request().Body())
+		gzipWriter, err := gzip.NewReader(buf)
 
 		if err != nil {
-			return err
+			if err != gzip.ErrHeader {
+				return err
+			}
+			return ctx.SendStatus(fiber.StatusBadRequest)
 		}
 
 		defer gzipWriter.Close()
@@ -31,7 +32,9 @@ func RequestCompress(ctx *fiber.Ctx) error {
 			return err
 		}
 
-		ctx.Request().SetBody(body)
+		ctx.Request().Header.Del(fiber.HeaderContentEncoding)
+
+		ctx.Request().SetBodyStream(io.NopCloser(bytes.NewReader(body)), len(body))
 	}
 
 	result := ctx.Next()
@@ -49,8 +52,6 @@ func RequestCompress(ctx *fiber.Ctx) error {
 		return result
 	}
 
-	ctx.Response().Header.Set(fiber.HeaderContentEncoding, "gzip")
-
 	body := ctx.Response().Body()
 
 	var bodyBytes bytes.Buffer
@@ -58,7 +59,6 @@ func RequestCompress(ctx *fiber.Ctx) error {
 	gzipWriter, err := gzip.NewWriterLevel(&bodyBytes, gzip.BestSpeed)
 
 	if err != nil {
-		logger.Log.Error("Err1 ", err)
 		return err
 	}
 
@@ -69,6 +69,8 @@ func RequestCompress(ctx *fiber.Ctx) error {
 	if err = gzipWriter.Close(); err != nil {
 		return err
 	}
+
+	ctx.Response().Header.Set("Content-Encoding", "gzip")
 
 	ctx.Response().SetBody(bodyBytes.Bytes())
 
