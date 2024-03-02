@@ -1,8 +1,9 @@
 package storage
 
 type URL struct {
-	Short    string
-	Original string
+	UUID     string `json:"uuid"`
+	Short    string `json:"short_url"`
+	Original string `json:"original_url"`
 }
 
 type IRepo interface {
