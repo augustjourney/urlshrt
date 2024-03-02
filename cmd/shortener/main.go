@@ -8,7 +8,7 @@ import (
 	"github.com/augustjourney/urlshrt/internal/controller"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
-	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
+	"github.com/augustjourney/urlshrt/internal/storage/infile"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	config := config.New()
 	logger.New()
 
-	repo := inmemory.New()
+	repo := infile.New(config)
 	service := service.New(&repo, config)
 	controller := controller.New(&service)
 	app := app.New(&controller)
