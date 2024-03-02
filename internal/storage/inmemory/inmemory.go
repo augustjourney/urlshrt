@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"github.com/augustjourney/urlshrt/internal/storage"
+	"github.com/google/uuid"
 )
 
 type Repo struct{}
@@ -9,7 +10,12 @@ type Repo struct{}
 var UrlsInMemory []storage.URL
 
 func (r *Repo) Create(short string, original string) {
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		panic(err)
+	}
 	url := storage.URL{
+		UUID:     uuid.String(),
 		Short:    short,
 		Original: original,
 	}
