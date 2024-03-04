@@ -40,7 +40,10 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	}
 
 	// Make a short url
-	short := c.service.Shorten(originalURL)
+	short, err := c.service.Shorten(originalURL)
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
+	}
 
 	// Response
 	return ctx.Status(http.StatusCreated).SendString(short)
@@ -63,7 +66,10 @@ func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	}
 
 	// Make a short url
-	result := c.service.Shorten(body.URL)
+	result, err := c.service.Shorten(body.URL)
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
+	}
 
 	response, err := json.Marshal(APICreateURLResult{
 		Result: result,
@@ -90,8 +96,11 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 
 	// Find original
 	originalURL, err := c.service.FindOriginal(short)
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
+	}
 
-	if err != nil || originalURL == "" {
+	if originalURL == "" {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 

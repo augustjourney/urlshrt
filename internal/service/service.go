@@ -11,6 +11,7 @@ import (
 )
 
 var errNotFound = errors.New("url not found")
+var errInternalError = errors.New("internal error")
 
 type Service struct {
 	repo   storage.IRepo
@@ -18,20 +19,26 @@ type Service struct {
 }
 
 type IService interface {
-	Shorten(originalURL string) string
+	Shorten(originalURL string) (string, error)
 	FindOriginal(short string) (string, error)
 }
 
-func (s *Service) Shorten(originalURL string) string {
+func (s *Service) Shorten(originalURL string) (string, error) {
 	hash := sha256.New()
 	io.WriteString(hash, originalURL)
 	short := fmt.Sprintf("%x", hash.Sum(nil))[:10]
-	s.repo.Create(short, originalURL)
-	return s.config.BaseURL + "/" + short
+	err := s.repo.Create(short, originalURL)
+	if err != nil {
+		return "", errInternalError
+	}
+	return s.config.BaseURL + "/" + short, nil
 }
 
 func (s *Service) FindOriginal(short string) (string, error) {
-	url := s.repo.Get(short)
+	url, err := s.repo.Get(short)
+	if err != nil {
+		return "", errInternalError
+	}
 	if url == nil {
 		return "", errNotFound
 	}
