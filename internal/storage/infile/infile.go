@@ -16,8 +16,6 @@ type Repo struct {
 	fileStoragePath string
 }
 
-var UrlsInMemory []storage.URL
-
 /*
 Логику добавления URL сделал такой:
 - Создаем URL struct
@@ -31,11 +29,11 @@ var UrlsInMemory []storage.URL
 Тогда самому нужно проверять запятые и конец файла.
 Пока не разобрался с этим.
 */
-func (r *Repo) Create(short string, original string) {
+func (r *Repo) Create(short string, original string) error {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		logger.Log.Error("Could not create uuid ", err)
-		panic(err)
+		return err
 	}
 	url := storage.URL{
 		UUID:     uuid.String(),
@@ -43,38 +41,46 @@ func (r *Repo) Create(short string, original string) {
 		Original: original,
 	}
 
-	urls := r.GetAll()
+	urls, err := r.GetAll()
+	if err != nil {
+		return err
+	}
+
 	urls = append(urls, url)
 
 	data, err := json.Marshal(&urls)
 	if err != nil {
 		logger.Log.Error("Could not marshal json urls ", err)
-		panic(err)
+		return err
 	}
+
 	file, err := os.OpenFile(r.fileStoragePath, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		logger.Log.Error("Could not open file to write urls ", err)
-		panic(err)
+		return err
 	}
+
 	defer file.Close()
+
 	file.Write(data)
+
+	return nil
 }
 
-func (r *Repo) GetAll() []storage.URL {
+func (r *Repo) GetAll() ([]storage.URL, error) {
 	file, err := os.OpenFile(r.fileStoragePath, os.O_RDONLY|os.O_CREATE, 0666)
+	var urls []storage.URL
 	if err != nil {
 		logger.Log.Error("Could not open file to read all urls ", err)
-		panic(err)
+		return urls, err
 	}
 
 	defer file.Close()
-
-	var urls []storage.URL
 
 	data, err := io.ReadAll(file)
 	if err != nil {
 		logger.Log.Error("Could not read all urls ", err)
-		panic(err)
+		return urls, err
 	}
 
 	err = json.Unmarshal(data, &urls)
@@ -83,18 +89,22 @@ func (r *Repo) GetAll() []storage.URL {
 		// it means json file is empty
 		if !strings.Contains(err.Error(), "unexpected end of JSON input") {
 			logger.Log.Error("Could not unmarshal all urls ", err)
-			panic(err)
+			return urls, err
 		}
 	}
 
-	return urls
+	return urls, nil
 }
 
-func (r *Repo) Get(short string) *storage.URL {
-
-	urls := r.GetAll()
+func (r *Repo) Get(short string) (*storage.URL, error) {
 
 	var url storage.URL
+
+	urls, err := r.GetAll()
+
+	if err != nil {
+		return &url, nil
+	}
 
 	for i := 0; i < len(urls); i++ {
 		if urls[i].Short == short {
@@ -103,7 +113,7 @@ func (r *Repo) Get(short string) *storage.URL {
 		}
 	}
 
-	return &url
+	return &url, nil
 }
 
 func New(config *config.Config) Repo {
