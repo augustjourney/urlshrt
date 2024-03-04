@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	BaseURL       string `env:"BASE_URL"`
-	ServerAddress string `env:"SERVER_ADDRESS"`
+	BaseURL         string `env:"BASE_URL"`
+	ServerAddress   string `env:"SERVER_ADDRESS"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
 var config Config
@@ -18,20 +19,23 @@ func New() *Config {
 	}
 
 	defaults := map[string]string{
-		"baseURL":       "http://localhost:8080",
-		"serverAddress": "localhost:8080",
+		"baseURL":         "http://localhost:8080",
+		"serverAddress":   "localhost:8080",
+		"fileStoragePath": "/tmp/short-url-db.json",
 	}
 
 	var (
 		flagServerAddress = flag.String("a", defaults["serverAddress"], "Server address on which server is running")
 		flagBaseURL       = flag.String("b", defaults["baseURL"], "Base URL which short urls will be accessible")
+		fileStoragePath   = flag.String("f", defaults["fileStoragePath"], "Path to file where urls data will be stored")
 	)
 
 	flag.Parse()
 
 	config = Config{
-		ServerAddress: *flagServerAddress,
-		BaseURL:       *flagBaseURL,
+		ServerAddress:   *flagServerAddress,
+		BaseURL:         *flagBaseURL,
+		FileStoragePath: *fileStoragePath,
 	}
 
 	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {
@@ -40,6 +44,10 @@ func New() *Config {
 
 	if baseURL := os.Getenv("BASE_URL"); baseURL != "" {
 		config.BaseURL = baseURL
+	}
+
+	if fileStoragePath := os.Getenv("FILE_STORAGE_PATH"); fileStoragePath != "" {
+		config.FileStoragePath = fileStoragePath
 	}
 
 	return &config
