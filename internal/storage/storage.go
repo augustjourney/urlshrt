@@ -7,6 +7,6 @@ type URL struct {
 }
 
 type IRepo interface {
-	Create(short string, original string)
-	Get(short string) *URL
+	Create(short string, original string) error
+	Get(short string) (*URL, error)
 }
