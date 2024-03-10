@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"github.com/augustjourney/urlshrt/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 )
@@ -12,11 +13,21 @@ type Controller interface {
 	GetURL(ctx *fiber.Ctx) error
 }
 
-func New(c Controller) *fiber.App {
+// Временное решение прокидывать db в контроллер
+// Позже db будет прокидываться только в repo
+func New(c Controller, db *sql.DB) *fiber.App {
 	app := fiber.New()
 
 	app.Use(middleware.RequestCompress)
 	app.Use(middleware.RequestLogger)
+
+	app.Get("/ping", func(ctx *fiber.Ctx) error {
+		err := db.Ping()
+		if err != nil {
+			return ctx.SendStatus(fiber.StatusInternalServerError)
+		}
+		return ctx.SendStatus(fiber.StatusOK)
+	})
 
 	app.Post("/", c.CreateURL)
 	app.Post("/api/shorten", c.APICreateURL)

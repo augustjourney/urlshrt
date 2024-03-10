@@ -28,7 +28,7 @@ func TestGetURL(t *testing.T) {
 	service := service.New(&repo, config)
 	controller := New(&service)
 
-	app := app.New(&controller)
+	app := app.New(&controller, nil)
 
 	repo.Create("321", "http://google.com")
 	repo.Create("123", "http://yandex.ru")
@@ -125,7 +125,7 @@ func TestCreateURL(t *testing.T) {
 	service := service.New(&repo, config)
 	controller := New(&service)
 
-	app := app.New(&controller)
+	app := app.New(&controller, nil)
 
 	type want struct {
 		code        int
@@ -193,7 +193,7 @@ func TestApiCreateURL(t *testing.T) {
 	service := service.New(&repo, config)
 	controller := New(&service)
 
-	app := app.New(&controller)
+	app := app.New(&controller, nil)
 
 	type want struct {
 		code        int
