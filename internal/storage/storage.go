@@ -1,5 +1,7 @@
 package storage
 
+import "context"
+
 type URL struct {
 	UUID     string `json:"uuid"`
 	Short    string `json:"short_url"`
@@ -7,6 +9,6 @@ type URL struct {
 }
 
 type IRepo interface {
-	Create(short string, original string) error
-	Get(short string) (*URL, error)
+	Create(ctx context.Context, short string, original string) error
+	Get(ctx context.Context, short string) (*URL, error)
 }

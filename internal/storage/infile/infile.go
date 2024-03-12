@@ -1,6 +1,7 @@
 package infile
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -29,7 +30,7 @@ type Repo struct {
 Тогда самому нужно проверять запятые и конец файла.
 Пока не разобрался с этим.
 */
-func (r *Repo) Create(short string, original string) error {
+func (r *Repo) Create(ctx context.Context, short string, original string) error {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		logger.Log.Error("Could not create uuid ", err)
@@ -41,7 +42,7 @@ func (r *Repo) Create(short string, original string) error {
 		Original: original,
 	}
 
-	urls, err := r.GetAll()
+	urls, err := r.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (r *Repo) Create(short string, original string) error {
 	return nil
 }
 
-func (r *Repo) GetAll() ([]storage.URL, error) {
+func (r *Repo) GetAll(ctx context.Context) ([]storage.URL, error) {
 	file, err := os.OpenFile(r.fileStoragePath, os.O_RDONLY|os.O_CREATE, 0666)
 	var urls []storage.URL
 	if err != nil {
@@ -96,11 +97,11 @@ func (r *Repo) GetAll() ([]storage.URL, error) {
 	return urls, nil
 }
 
-func (r *Repo) Get(short string) (*storage.URL, error) {
+func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 
 	var url storage.URL
 
-	urls, err := r.GetAll()
+	urls, err := r.GetAll(ctx)
 
 	if err != nil {
 		return &url, nil
@@ -116,8 +117,9 @@ func (r *Repo) Get(short string) (*storage.URL, error) {
 	return &url, nil
 }
 
-func New(config *config.Config) Repo {
-	return Repo{
+func New(config *config.Config) *Repo {
+	repo := Repo{
 		fileStoragePath: config.FileStoragePath,
 	}
+	return &repo
 }

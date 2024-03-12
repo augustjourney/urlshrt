@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -27,7 +28,7 @@ func (s *Service) Shorten(originalURL string) (string, error) {
 	hash := sha256.New()
 	io.WriteString(hash, originalURL)
 	short := fmt.Sprintf("%x", hash.Sum(nil))[:10]
-	err := s.repo.Create(short, originalURL)
+	err := s.repo.Create(context.TODO(), short, originalURL)
 	if err != nil {
 		return "", errInternalError
 	}
@@ -35,7 +36,7 @@ func (s *Service) Shorten(originalURL string) (string, error) {
 }
 
 func (s *Service) FindOriginal(short string) (string, error) {
-	url, err := s.repo.Get(short)
+	url, err := s.repo.Get(context.TODO(), short)
 	if err != nil {
 		return "", errInternalError
 	}
