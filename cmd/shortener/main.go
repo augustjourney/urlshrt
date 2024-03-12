@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/controller"
 	"github.com/augustjourney/urlshrt/internal/infra"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
+	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/augustjourney/urlshrt/internal/storage/infile"
+	"github.com/augustjourney/urlshrt/internal/storage/postgres"
 )
 
 func main() {
@@ -23,8 +27,14 @@ func main() {
 
 	defer db.Close()
 
-	repo := infile.New(config)
-	service := service.New(&repo, config)
+	var repo storage.IRepo
+
+	repo, err = postgres.New(context.Background(), db)
+	if err != nil {
+		logger.Log.Error("Could not connect to postgres, using in-file storage")
+		repo = infile.New(config)
+	}
+	service := service.New(repo, config)
 	controller := controller.New(&service)
 	app := app.New(&controller, db)
 
