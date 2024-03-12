@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage/infile"
+	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,14 +26,14 @@ func TestGetURL(t *testing.T) {
 	config := config.New()
 	logger.New()
 
-	repo := infile.New(config)
-	service := service.New(&repo, config)
+	repo := inmemory.New()
+	service := service.New(repo, config)
 	controller := New(&service)
 
 	app := app.New(&controller, nil)
 
-	repo.Create("321", "http://google.com")
-	repo.Create("123", "http://yandex.ru")
+	repo.Create(context.TODO(), "321", "http://google.com")
+	repo.Create(context.TODO(), "123", "http://yandex.ru")
 
 	type want struct {
 		code        int
@@ -122,7 +124,7 @@ func TestGetURL(t *testing.T) {
 func TestCreateURL(t *testing.T) {
 	config := config.New()
 	repo := infile.New(config)
-	service := service.New(&repo, config)
+	service := service.New(repo, config)
 	controller := New(&service)
 
 	app := app.New(&controller, nil)
@@ -190,7 +192,7 @@ func TestCreateURL(t *testing.T) {
 func TestApiCreateURL(t *testing.T) {
 	config := config.New()
 	repo := infile.New(config)
-	service := service.New(&repo, config)
+	service := service.New(repo, config)
 	controller := New(&service)
 
 	app := app.New(&controller, nil)
