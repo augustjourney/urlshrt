@@ -16,14 +16,13 @@ import (
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage"
-	"github.com/augustjourney/urlshrt/internal/storage/infile"
 	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
+	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetURL(t *testing.T) {
-
+func newAppInstance() (*fiber.App, storage.IRepo) {
 	config := config.New()
 	logger.New()
 
@@ -32,6 +31,13 @@ func TestGetURL(t *testing.T) {
 	controller := New(&service)
 
 	app := app.New(&controller, nil)
+
+	return app, repo
+}
+
+func TestGetURL(t *testing.T) {
+
+	app, repo := newAppInstance()
 
 	url1 := storage.URL{
 		UUID:     "some-uuid-1",
@@ -135,12 +141,7 @@ func TestGetURL(t *testing.T) {
 }
 
 func TestCreateURL(t *testing.T) {
-	config := config.New()
-	repo := infile.New(config)
-	service := service.New(repo, config)
-	controller := New(&service)
-
-	app := app.New(&controller, nil)
+	app, _ := newAppInstance()
 
 	type want struct {
 		code        int
@@ -203,12 +204,7 @@ func TestCreateURL(t *testing.T) {
 }
 
 func TestApiCreateURL(t *testing.T) {
-	config := config.New()
-	repo := infile.New(config)
-	service := service.New(repo, config)
-	controller := New(&service)
-
-	app := app.New(&controller, nil)
+	app, _ := newAppInstance()
 
 	type want struct {
 		code        int
