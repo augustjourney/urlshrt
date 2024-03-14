@@ -49,6 +49,39 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusCreated).SendString(short)
 }
 
+func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
+	ctx.Set("Content-type", "application/json")
+
+	if ctx.Method() != http.MethodPost {
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	var body []service.BatchURL
+
+	err := json.Unmarshal(ctx.Body(), &body)
+
+	if err != nil || len(body) == 0 {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	result, err := c.service.ShortenBatch(body)
+
+	if err != nil {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	response, err := json.Marshal(result)
+
+	if err != nil {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	return ctx.Status(http.StatusCreated).Send(response)
+}
+
 func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "application/json")
 

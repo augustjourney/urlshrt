@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+
 	"github.com/augustjourney/urlshrt/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 )
@@ -11,6 +12,7 @@ type Controller interface {
 	CreateURL(ctx *fiber.Ctx) error
 	APICreateURL(ctx *fiber.Ctx) error
 	GetURL(ctx *fiber.Ctx) error
+	APICreateURLBatch(ctx *fiber.Ctx) error
 }
 
 // Временное решение прокидывать db в контроллер
@@ -31,6 +33,7 @@ func New(c Controller, db *sql.DB) *fiber.App {
 
 	app.Post("/", c.CreateURL)
 	app.Post("/api/shorten", c.APICreateURL)
+	app.Post("/api/shorten/batch", c.APICreateURLBatch)
 	app.Get("/:short", c.GetURL)
 	app.Use("/*", c.BadRequest)
 
