@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/storage"
-	"github.com/google/uuid"
 )
 
 type Repo struct {
@@ -29,21 +27,9 @@ func (r *Repo) Init(ctx context.Context) error {
 	return nil
 }
 
-func (r *Repo) Create(ctx context.Context, short string, original string) error {
-	uuid, err := uuid.NewRandom()
+func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
-	if err != nil {
-		logger.Log.Error("Could not create uuid ", err)
-		return err
-	}
-
-	url := storage.URL{
-		UUID:     uuid.String(),
-		Short:    short,
-		Original: original,
-	}
-
-	_, err = r.db.ExecContext(ctx, `
+	_, err := r.db.ExecContext(ctx, `
 		insert into urls (uuid, short, original)
 		values ($1, $2, $3)
 	`, url.UUID, url.Short, url.Original)
@@ -53,6 +39,27 @@ func (r *Repo) Create(ctx context.Context, short string, original string) error 
 	}
 
 	return nil
+}
+
+func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	for _, url := range urls {
+		_, err = tx.ExecContext(ctx, `
+			insert into urls (uuid, short, original)
+			values ($1, $2, $3)
+		`, url.UUID, url.Short, url.Original)
+
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
