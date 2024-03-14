@@ -15,6 +15,7 @@ import (
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
+	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/augustjourney/urlshrt/internal/storage/infile"
 	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +33,20 @@ func TestGetURL(t *testing.T) {
 
 	app := app.New(&controller, nil)
 
-	repo.Create(context.TODO(), "321", "http://google.com")
-	repo.Create(context.TODO(), "123", "http://yandex.ru")
+	url1 := storage.URL{
+		UUID:     "some-uuid-1",
+		Short:    "shrturl1",
+		Original: "http://google.com",
+	}
+
+	url2 := storage.URL{
+		UUID:     "some-uuid-2",
+		Short:    "shrturl2",
+		Original: "http://yandex.ru",
+	}
+
+	repo.Create(context.TODO(), url1)
+	repo.Create(context.TODO(), url2)
 
 	type want struct {
 		code        int
@@ -62,9 +75,9 @@ func TestGetURL(t *testing.T) {
 			want: want{
 				code:        http.StatusTemporaryRedirect,
 				contentType: "text/plain",
-				response:    "http://yandex.ru",
+				response:    url1.Original,
 			},
-			shortURL: "123",
+			shortURL: url1.Short,
 		},
 		{
 			name:   "Found url 2",
@@ -72,9 +85,9 @@ func TestGetURL(t *testing.T) {
 			want: want{
 				code:        http.StatusTemporaryRedirect,
 				contentType: "text/plain",
-				response:    "http://google.com",
+				response:    url2.Original,
 			},
-			shortURL: "321",
+			shortURL: url2.Short,
 		},
 		{
 			name:   "Method [PUT] not allowed",
@@ -83,7 +96,7 @@ func TestGetURL(t *testing.T) {
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
-			shortURL: "321",
+			shortURL: url2.Short,
 		},
 		{
 			name:   "Method [DELETE] not allowed",
@@ -92,7 +105,7 @@ func TestGetURL(t *testing.T) {
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
-			shortURL: "321",
+			shortURL: url2.Short,
 		},
 		{
 			name:   "Method [POST] not allowed with shortURL",
@@ -101,7 +114,7 @@ func TestGetURL(t *testing.T) {
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
-			shortURL: "321",
+			shortURL: url2.Short,
 		},
 	}
 
