@@ -9,6 +9,7 @@ type URL struct {
 }
 
 type IRepo interface {
-	Create(ctx context.Context, short string, original string) error
+	Create(ctx context.Context, url URL) error
 	Get(ctx context.Context, short string) (*URL, error)
+	CreateBatch(ctx context.Context, urls []URL) error
 }
