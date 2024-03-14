@@ -95,7 +95,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 
 		result = append(result, BatchResultURL{
 			CorrelationID: url.CorrelationID,
-			ShortURL:      short,
+			ShortURL:      s.config.BaseURL + "/" + short,
 		})
 	}
 
