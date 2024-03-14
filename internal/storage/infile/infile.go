@@ -10,7 +10,6 @@ import (
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/storage"
-	"github.com/google/uuid"
 )
 
 type Repo struct {
@@ -30,17 +29,7 @@ type Repo struct {
 Тогда самому нужно проверять запятые и конец файла.
 Пока не разобрался с этим.
 */
-func (r *Repo) Create(ctx context.Context, short string, original string) error {
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		logger.Log.Error("Could not create uuid ", err)
-		return err
-	}
-	url := storage.URL{
-		UUID:     uuid.String(),
-		Short:    short,
-		Original: original,
-	}
+func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
 	urls, err := r.GetAll(ctx)
 	if err != nil {
@@ -50,6 +39,34 @@ func (r *Repo) Create(ctx context.Context, short string, original string) error 
 	urls = append(urls, url)
 
 	data, err := json.Marshal(&urls)
+	if err != nil {
+		logger.Log.Error("Could not marshal json urls ", err)
+		return err
+	}
+
+	file, err := os.OpenFile(r.fileStoragePath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		logger.Log.Error("Could not open file to write urls ", err)
+		return err
+	}
+
+	defer file.Close()
+
+	file.Write(data)
+
+	return nil
+}
+
+func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
+
+	currentURLs, err := r.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	currentURLs = append(currentURLs, urls...)
+
+	data, err := json.Marshal(&currentURLs)
 	if err != nil {
 		logger.Log.Error("Could not marshal json urls ", err)
 		return err
