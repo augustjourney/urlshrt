@@ -12,19 +12,35 @@ type Repo struct {
 }
 
 func (r *Repo) Init(ctx context.Context) error {
-	_, err := r.db.ExecContext(ctx, `
-		CREATE TABLE IF NOT EXISTS urls (
-		    id SERIAL PRIMARY KEY NOT NULL,
-		    uuid VARCHAR(50) NOT NULL,
-		    short VARCHAR(50) NOT NULL,
-		    original VARCHAR NOT NULL,
-			UNIQUE(short)
-		)
-	`)
+	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = tx.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS urls (
+			id SERIAL PRIMARY KEY NOT NULL,
+			uuid VARCHAR(50) NOT NULL,
+			short VARCHAR(50) NOT NULL,
+			original VARCHAR NOT NULL,
+			UNIQUE(short)
+		)
+	`)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		CREATE INDEX IF NOT EXISTS short_idx ON urls (short);
+	`)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
