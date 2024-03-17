@@ -22,9 +22,14 @@ type Service struct {
 }
 
 type IService interface {
-	Shorten(originalURL string) (string, error)
+	Shorten(originalURL string) (ShortenResult, error)
 	FindOriginal(short string) (string, error)
 	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
+}
+
+type ShortenResult struct {
+	ResultURL     string
+	AlreadyExists bool
 }
 
 type BatchURL struct {
@@ -54,11 +59,19 @@ func (s *Service) hashURL(url string) string {
 	return fmt.Sprintf("%x", hash.Sum(nil))[:10]
 }
 
-func (s *Service) Shorten(originalURL string) (string, error) {
+func (s *Service) buildShortURL(short string) string {
+	return s.config.BaseURL + "/" + short
+}
+
+func (s *Service) Shorten(originalURL string) (ShortenResult, error) {
 	short := s.hashURL(originalURL)
 	uuid, err := s.generateID()
+	result := ShortenResult{
+		ResultURL:     "",
+		AlreadyExists: false,
+	}
 	if err != nil {
-		return "", errInternalError
+		return result, errInternalError
 	}
 	err = s.repo.Create(context.TODO(), storage.URL{
 		UUID:     uuid,
@@ -67,10 +80,27 @@ func (s *Service) Shorten(originalURL string) (string, error) {
 	})
 
 	if err != nil {
-		return "", errInternalError
+		// Если приходит ошибка — уже есть такой url
+		// То находим его и возвращаем
+		if errors.Is(err, storage.ErrAlreadyExists) {
+
+			url, err := s.repo.GetByOriginal(context.TODO(), originalURL)
+
+			if err != nil {
+				return result, errInternalError
+			}
+
+			result.AlreadyExists = true
+			result.ResultURL = s.buildShortURL(url.Short)
+
+			return result, err
+		}
+		return result, errInternalError
 	}
 
-	return s.config.BaseURL + "/" + short, nil
+	result.ResultURL = s.buildShortURL(short)
+
+	return result, nil
 }
 
 func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
