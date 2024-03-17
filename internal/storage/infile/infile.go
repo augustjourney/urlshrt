@@ -31,6 +31,14 @@ type Repo struct {
 */
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
+	foundUrl, err := r.GetByOriginal(ctx, url.Original)
+	if err != nil {
+		return err
+	}
+	if foundUrl.Short != "" {
+		return storage.ErrAlreadyExists
+	}
+
 	urls, err := r.GetAll(ctx)
 	if err != nil {
 		return err
@@ -126,6 +134,26 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 
 	for i := 0; i < len(urls); i++ {
 		if urls[i].Short == short {
+			url = urls[i]
+			break
+		}
+	}
+
+	return &url, nil
+}
+
+func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
+
+	var url storage.URL
+
+	urls, err := r.GetAll(ctx)
+
+	if err != nil {
+		return &url, nil
+	}
+
+	for i := 0; i < len(urls); i++ {
+		if urls[i].Original == original {
 			url = urls[i]
 			break
 		}

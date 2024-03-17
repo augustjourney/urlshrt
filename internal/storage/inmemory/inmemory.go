@@ -11,6 +11,13 @@ type Repo struct{}
 var UrlsInMemory []storage.URL
 
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
+	foundUrl, err := r.GetByOriginal(ctx, url.Original)
+	if err != nil {
+		return err
+	}
+	if foundUrl.Short != "" {
+		return storage.ErrAlreadyExists
+	}
 	UrlsInMemory = append(UrlsInMemory, url)
 	return nil
 }
@@ -24,6 +31,18 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	var url storage.URL
 	for i := 0; i < len(UrlsInMemory); i++ {
 		if UrlsInMemory[i].Short == short {
+			url = UrlsInMemory[i]
+			break
+		}
+	}
+
+	return &url, nil
+}
+
+func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
+	var url storage.URL
+	for i := 0; i < len(UrlsInMemory); i++ {
+		if UrlsInMemory[i].Original == original {
 			url = UrlsInMemory[i]
 			break
 		}
