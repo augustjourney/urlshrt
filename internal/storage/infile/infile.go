@@ -31,11 +31,11 @@ type Repo struct {
 */
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
-	foundUrl, err := r.GetByOriginal(ctx, url.Original)
+	foundURL, err := r.GetByOriginal(ctx, url.Original)
 	if err != nil {
 		return err
 	}
-	if foundUrl.Short != "" {
+	if foundURL.Short != "" {
 		return storage.ErrAlreadyExists
 	}
 
