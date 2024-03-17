@@ -165,6 +165,15 @@ func TestCreateURL(t *testing.T) {
 			method:      http.MethodPost,
 		},
 		{
+			name: "URL created with conflict",
+			want: want{
+				code:        http.StatusConflict,
+				contentType: "text/plain",
+			},
+			originalURL: "http://yandex.ru",
+			method:      http.MethodPost,
+		},
+		{
 			name: "Wront HTTP method",
 			want: want{
 				code:        http.StatusBadRequest,
@@ -223,6 +232,16 @@ func TestApiCreateURL(t *testing.T) {
 			name: "URL created",
 			want: want{
 				code:        http.StatusCreated,
+				contentType: "application/json",
+				result:      true,
+			},
+			originalURL: "http://yandex.ru",
+			method:      http.MethodPost,
+		},
+		{
+			name: "URL created with conflict",
+			want: want{
+				code:        http.StatusConflict,
 				contentType: "application/json",
 				result:      true,
 			},
