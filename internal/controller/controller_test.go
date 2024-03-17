@@ -17,6 +17,7 @@ import (
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -265,6 +266,108 @@ func TestApiCreateURL(t *testing.T) {
 			if tt.want.result {
 				require.NoError(t, err)
 				assert.Equal(t, true, resultBody.Result != "", "Result url should not be empty")
+			}
+		})
+	}
+}
+
+func TestApiCreateURLBatch(t *testing.T) {
+	app, _ := newAppInstance()
+
+	type want struct {
+		code             int
+		contentType      string
+		resultUrlsLength int
+	}
+
+	tests := []struct {
+		name string
+		body string
+		want want
+	}{
+		{
+			name: "Batch URL created",
+			body: `[
+				{
+					"original_url": "http://yandex.ru/123",
+					"correlation_id": "1"
+				},
+					{
+					"original_url": "http://vk.com/123",
+					"correlation_id": "2"
+				},
+					{
+					"original_url": "http://ya.ru/123",
+					"correlation_id": "3"
+				}
+			]`,
+			want: want{
+				contentType:      "application/json",
+				code:             http.StatusCreated,
+				resultUrlsLength: 3,
+			},
+		},
+		{
+			name: "Batch URL Bad Request — Wrong JSON body",
+			body: `[
+				{
+					"original_url": "http://yandex.ru/123",
+					"correlation_id": "1"
+				},
+					{
+					"original_url": "http://vk.com/123",
+					"correlation_id": "2"
+				},
+					{
+					"
+			]`,
+			want: want{
+				contentType:      "application/json",
+				code:             http.StatusBadRequest,
+				resultUrlsLength: 0,
+			},
+		},
+		{
+			name: "Batch URL Created — Only With Correlation ID",
+			body: `[
+				{
+					"original_url": "http://yandex.ru/123",
+					"correlation_id": "1"
+				},
+				{
+					"original_url": "http://vk.com/123"
+				}
+			]`,
+			want: want{
+				contentType:      "application/json",
+				code:             http.StatusCreated,
+				resultUrlsLength: 1,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url := "/api/shorten/batch"
+
+			request := httptest.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(tt.body)))
+
+			request.Header.Set("Content-Type", tt.want.contentType)
+
+			result, err := app.Test(request, 1)
+			require.NoError(t, err)
+
+			var resultBody []service.BatchResultURL
+
+			err = json.NewDecoder(result.Body).Decode(&resultBody)
+			result.Body.Close()
+
+			assert.Equal(t, tt.want.code, result.StatusCode)
+			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"), fmt.Sprintf("Content Type should be %s", tt.want.contentType))
+
+			if result.StatusCode == http.StatusCreated {
+				require.NoError(t, err)
+				assert.Equal(t, tt.want.resultUrlsLength, len(resultBody))
 			}
 		})
 	}
