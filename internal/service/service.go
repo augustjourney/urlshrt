@@ -79,6 +79,13 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 
 	for _, url := range batchURLs {
 
+		// Если url пришел без correlation_id
+		// То не обрабатываем
+		// Хотя наподумать — можно будет какой-то рандомный ID присваивать тогда
+		if url.CorrelationID == "" {
+			continue
+		}
+
 		short := s.hashURL(url.OriginalURL)
 
 		uuid, err := s.generateID()
