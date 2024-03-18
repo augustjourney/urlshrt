@@ -74,7 +74,7 @@ func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 
 	if err != nil {
 		logger.Log.Error(err)
-		return ctx.SendStatus(http.StatusBadRequest)
+		return ctx.SendStatus(http.StatusInternalServerError)
 	}
 
 	response, err := json.Marshal(result)

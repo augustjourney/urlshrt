@@ -74,7 +74,7 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 
 	currentURLs = append(currentURLs, urls...)
 
-	data, err := json.Marshal(&currentURLs)
+	data, err := json.Marshal(currentURLs)
 	if err != nil {
 		logger.Log.Error("Could not marshal json urls ", err)
 		return err
