@@ -1,31 +1,33 @@
 package inmemory
 
 import (
-	"github.com/augustjourney/urlshrt/internal/logger"
+	"context"
+
 	"github.com/augustjourney/urlshrt/internal/storage"
-	"github.com/google/uuid"
 )
 
 type Repo struct{}
 
 var UrlsInMemory []storage.URL
 
-func (r *Repo) Create(short string, original string) error {
-	uuid, err := uuid.NewRandom()
+func (r *Repo) Create(ctx context.Context, url storage.URL) error {
+	foundURL, err := r.GetByOriginal(ctx, url.Original)
 	if err != nil {
-		logger.Log.Error("Could not create uuid ", err)
 		return err
 	}
-	url := storage.URL{
-		UUID:     uuid.String(),
-		Short:    short,
-		Original: original,
+	if foundURL.Short != "" {
+		return storage.ErrAlreadyExists
 	}
 	UrlsInMemory = append(UrlsInMemory, url)
 	return nil
 }
 
-func (r *Repo) Get(short string) (*storage.URL, error) {
+func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
+	UrlsInMemory = append(UrlsInMemory, urls...)
+	return nil
+}
+
+func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	var url storage.URL
 	for i := 0; i < len(UrlsInMemory); i++ {
 		if UrlsInMemory[i].Short == short {
@@ -37,7 +39,19 @@ func (r *Repo) Get(short string) (*storage.URL, error) {
 	return &url, nil
 }
 
-func New() Repo {
+func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
+	var url storage.URL
+	for i := 0; i < len(UrlsInMemory); i++ {
+		if UrlsInMemory[i].Original == original {
+			url = UrlsInMemory[i]
+			break
+		}
+	}
+
+	return &url, nil
+}
+
+func New() *Repo {
 	UrlsInMemory = make([]storage.URL, 0)
-	return Repo{}
+	return &Repo{}
 }
