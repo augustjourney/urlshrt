@@ -171,6 +171,11 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 		urls = append(urls, url)
 	}
 
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
 	return &urls, nil
 }
 

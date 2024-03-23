@@ -63,6 +63,8 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	userCookie.Name = "user"
 	userCookie.Value = userUUID
 
+	ctx.Cookie(userCookie)
+
 	// Если уже существует такой url
 	// То возвращаем url и статус 409
 	if result.AlreadyExists {
