@@ -26,7 +26,7 @@ type IService interface {
 	FindOriginal(short string) (string, error)
 	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
 	GenerateID() (string, error)
-	GetUserURLs(ctx context.Context, userUUID string) (*[]storage.URL, error)
+	GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error)
 }
 
 type ShortenResult struct {
@@ -42,6 +42,11 @@ type BatchURL struct {
 type BatchResultURL struct {
 	ShortURL      string `json:"short_url"`
 	CorrelationID string `json:"correlation_id"`
+}
+
+type UserURLResult struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
 }
 
 func (s *Service) GenerateID() (string, error) {
@@ -161,12 +166,21 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	return url.Original, nil
 }
 
-func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]storage.URL, error) {
+func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
 	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
 	if err != nil {
 		return nil, errInternalError
 	}
-	return urls, nil
+
+	var result []UserURLResult
+
+	for _, url := range *urls {
+		result = append(result, UserURLResult{
+			ShortURL:    s.buildShortURL(url.Short),
+			OriginalURL: url.Original,
+		})
+	}
+	return &result, nil
 }
 
 func New(repo storage.IRepo, config *config.Config) Service {
