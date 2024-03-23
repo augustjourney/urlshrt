@@ -36,7 +36,7 @@ func New(c Controller, db *sql.DB) *fiber.App {
 	app.Post("/api/shorten", c.APICreateURL)
 	app.Post("/api/shorten/batch", c.APICreateURLBatch)
 	app.Get("/:short", c.GetURL)
-	app.Get("/user/urls", c.GetUserURLs)
+	app.Get("/api/user/urls", c.GetUserURLs)
 	app.Use("/*", c.BadRequest)
 
 	return app
