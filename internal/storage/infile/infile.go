@@ -122,6 +122,24 @@ func (r *Repo) GetAll(ctx context.Context) ([]storage.URL, error) {
 	return urls, nil
 }
 
+func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
+	var urls []storage.URL
+
+	allURLs, err := r.GetAll(ctx)
+
+	if err != nil {
+		return &urls, nil
+	}
+
+	for i := 0; i < len(allURLs); i++ {
+		if allURLs[i].UserUUID == userUUID {
+			urls = append(urls, urls[i])
+		}
+	}
+
+	return &urls, nil
+}
+
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 
 	var url storage.URL

@@ -22,9 +22,11 @@ type Service struct {
 }
 
 type IService interface {
-	Shorten(originalURL string) (*ShortenResult, error)
+	Shorten(originalURL string, userUUID string) (*ShortenResult, error)
 	FindOriginal(short string) (string, error)
 	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
+	GenerateID() (string, error)
+	GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error)
 }
 
 type ShortenResult struct {
@@ -42,7 +44,12 @@ type BatchResultURL struct {
 	CorrelationID string `json:"correlation_id"`
 }
 
-func (s *Service) generateID() (string, error) {
+type UserURLResult struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+func (s *Service) GenerateID() (string, error) {
 	uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -63,9 +70,9 @@ func (s *Service) buildShortURL(short string) string {
 	return s.config.BaseURL + "/" + short
 }
 
-func (s *Service) Shorten(originalURL string) (*ShortenResult, error) {
+func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, error) {
 	short := s.hashURL(originalURL)
-	uuid, err := s.generateID()
+	uuid, err := s.GenerateID()
 	result := ShortenResult{
 		ResultURL:     "",
 		AlreadyExists: false,
@@ -78,6 +85,7 @@ func (s *Service) Shorten(originalURL string) (*ShortenResult, error) {
 		UUID:     uuid,
 		Short:    short,
 		Original: originalURL,
+		UserUUID: userUUID,
 	})
 
 	if err != nil {
@@ -119,7 +127,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 
 		short := s.hashURL(url.OriginalURL)
 
-		uuid, err := s.generateID()
+		uuid, err := s.GenerateID()
 
 		if err != nil {
 			return nil, err
@@ -156,6 +164,23 @@ func (s *Service) FindOriginal(short string) (string, error) {
 		return "", errNotFound
 	}
 	return url.Original, nil
+}
+
+func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
+	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
+	if err != nil {
+		return nil, errInternalError
+	}
+
+	var result []UserURLResult
+
+	for _, url := range *urls {
+		result = append(result, UserURLResult{
+			ShortURL:    s.buildShortURL(url.Short),
+			OriginalURL: url.Original,
+		})
+	}
+	return &result, nil
 }
 
 func New(repo storage.IRepo, config *config.Config) Service {

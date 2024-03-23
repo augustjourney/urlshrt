@@ -39,6 +39,18 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	return &url, nil
 }
 
+func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
+	var urls []storage.URL
+
+	for i := 0; i < len(UrlsInMemory); i++ {
+		if UrlsInMemory[i].UserUUID == userUUID {
+			urls = append(urls, urls[i])
+		}
+	}
+
+	return &urls, nil
+}
+
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
 	var url storage.URL
 	for i := 0; i < len(UrlsInMemory); i++ {
