@@ -52,15 +52,24 @@ func (r *Repo) Init(ctx context.Context) error {
 		return err
 	}
 
+	_, err = tx.ExecContext(ctx, `
+		ALTER TABLE urls ADD COLUMN IF NOT EXISTS user_uuid VARCHAR;
+	`)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return tx.Commit()
 }
 
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
 	_, err := r.db.ExecContext(ctx, `
-		insert into urls (uuid, short, original)
-		values ($1, $2, $3)
-	`, url.UUID, url.Short, url.Original)
+		insert into urls (uuid, short, original, user_uuid)
+		values ($1, $2, $3, $4)
+	`, url.UUID, url.Short, url.Original, url.UserUUID)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -134,6 +143,35 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	}
 
 	return &url, nil
+}
+
+func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
+	var urls []storage.URL
+
+	rows, err := r.db.QueryContext(ctx, `
+		select short, original 
+		from urls
+		where user_uuid = $1
+
+	`, userUUID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var url storage.URL
+		err = rows.Scan(&url.Short, &url.Original)
+		if err != nil {
+			return nil, err
+		}
+
+		urls = append(urls, url)
+	}
+
+	return &urls, nil
 }
 
 func New(ctx context.Context, db *sql.DB) (*Repo, error) {
