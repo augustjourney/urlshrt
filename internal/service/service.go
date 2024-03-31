@@ -13,8 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var errNotFound = errors.New("url not found")
-var errInternalError = errors.New("internal error")
+var ErrNotFound = errors.New("url not found")
+var ErrIsDeleted = errors.New("url is deleted")
+var ErrInternalError = errors.New("internal error")
 
 type Service struct {
 	repo   storage.IRepo
@@ -79,7 +80,7 @@ func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, 
 		AlreadyExists: false,
 	}
 	if err != nil {
-		return &result, errInternalError
+		return &result, ErrInternalError
 	}
 	ctx := context.TODO()
 	err = s.repo.Create(ctx, storage.URL{
@@ -97,7 +98,7 @@ func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, 
 			url, err := s.repo.GetByOriginal(ctx, originalURL)
 
 			if err != nil {
-				return &result, errInternalError
+				return &result, ErrInternalError
 			}
 
 			result.AlreadyExists = true
@@ -105,7 +106,7 @@ func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, 
 
 			return &result, err
 		}
-		return &result, errInternalError
+		return &result, ErrInternalError
 	}
 
 	result.ResultURL = s.buildShortURL(short)
@@ -150,7 +151,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 
 	if err != nil {
 		logger.Log.Error(err)
-		return result, errInternalError
+		return result, ErrInternalError
 	}
 
 	return result, nil
@@ -159,10 +160,13 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 func (s *Service) FindOriginal(short string) (string, error) {
 	url, err := s.repo.Get(context.TODO(), short)
 	if err != nil {
-		return "", errInternalError
+		return "", ErrInternalError
 	}
 	if url == nil {
-		return "", errNotFound
+		return "", ErrNotFound
+	}
+	if url.IsDeleted {
+		return "", ErrIsDeleted
 	}
 	return url.Original, nil
 }
@@ -179,7 +183,7 @@ func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userId str
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
 	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
 	if err != nil {
-		return nil, errInternalError
+		return nil, ErrInternalError
 	}
 
 	var result []UserURLResult
