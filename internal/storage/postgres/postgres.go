@@ -161,13 +161,13 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	var url storage.URL
 
 	row := r.db.QueryRowContext(ctx, `
-		select uuid, short, original 
+		select uuid, short, original, is_deleted
 		from urls
 		where short = $1
 
 	`, short)
 
-	err := row.Scan(&url.UUID, &url.Short, &url.Original)
+	err := row.Scan(&url.UUID, &url.Short, &url.Original, &url.IsDeleted)
 
 	if err != nil {
 		return nil, err
