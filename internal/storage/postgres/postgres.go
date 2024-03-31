@@ -116,6 +116,28 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	return tx.Commit()
 }
 
+func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userId string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	for _, shortId := range shortIds {
+		_, err := tx.ExecContext(ctx, `
+			update urls
+			set is_deleted = true
+			where user_uuid = $1 and short = $2
+		`, userId, shortId)
+
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
 	var url storage.URL
 
