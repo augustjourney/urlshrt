@@ -6,10 +6,11 @@ import (
 )
 
 type URL struct {
-	UUID     string `json:"uuid,omitempty"`
-	Short    string `json:"short_url"`
-	Original string `json:"original_url"`
-	UserUUID string `json:"user_uuid,omitempty"`
+	UUID      string `json:"uuid,omitempty"`
+	Short     string `json:"short_url"`
+	Original  string `json:"original_url"`
+	UserUUID  string `json:"user_uuid,omitempty"`
+	IsDeleted bool
 }
 
 type IRepo interface {
@@ -18,6 +19,7 @@ type IRepo interface {
 	GetByOriginal(ctx context.Context, original string) (*URL, error)
 	CreateBatch(ctx context.Context, urls []URL) error
 	GetByUserUUID(ctx context.Context, userUUID string) (*[]URL, error)
+	DeleteBatch(ctx context.Context, shortIds []string, userId string) error
 }
 
 var ErrAlreadyExists = errors.New("URL already exists")
