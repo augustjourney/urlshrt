@@ -61,6 +61,15 @@ func (r *Repo) Init(ctx context.Context) error {
 		return err
 	}
 
+	_, err = tx.ExecContext(ctx, `
+		ALTER TABLE urls ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
+	`)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return tx.Commit()
 }
 
