@@ -107,6 +107,37 @@ func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusCreated).Send(response)
 }
 
+func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
+	if ctx.Method() != http.MethodDelete {
+		return ctx.SendStatus(http.StatusMethodNotAllowed)
+	}
+
+	userUUID := ctx.Get("Authorization")
+
+	var err error
+
+	if userUUID == "" {
+		return ctx.SendStatus(http.StatusUnauthorized)
+	}
+
+	var shortIds []string
+
+	err = json.Unmarshal(ctx.Body(), &shortIds)
+
+	if err != nil {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	err = c.service.DeleteBatch(context.TODO(), shortIds, userUUID)
+
+	if err != nil {
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
+
+	return ctx.SendStatus(http.StatusAccepted)
+}
+
 func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "application/json")
 
