@@ -43,12 +43,30 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 	var urls []storage.URL
 
 	for i := 0; i < len(UrlsInMemory); i++ {
-		if UrlsInMemory[i].UserUUID == userUUID {
-			urls = append(urls, urls[i])
+		if UrlsInMemory[i].UserUUID == userUUID && !UrlsInMemory[i].IsDeleted {
+			urls = append(urls, UrlsInMemory[i])
 		}
 	}
 
 	return &urls, nil
+}
+
+func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userUUID string) error {
+	shortIdsMap := make(map[string]bool)
+
+	for _, shortId := range shortIds {
+		shortIdsMap[shortId] = true
+	}
+
+	for i := 0; i < len(UrlsInMemory); i++ {
+		url := UrlsInMemory[i]
+		_, exists := shortIdsMap[url.Short]
+		if url.UserUUID == userUUID && exists {
+			UrlsInMemory[i].IsDeleted = true
+		}
+	}
+
+	return nil
 }
 
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {

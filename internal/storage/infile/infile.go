@@ -132,12 +132,54 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 	}
 
 	for i := 0; i < len(allURLs); i++ {
-		if allURLs[i].UserUUID == userUUID {
-			urls = append(urls, urls[i])
+		if allURLs[i].UserUUID == userUUID && !allURLs[i].IsDeleted {
+			urls = append(urls, allURLs[i])
 		}
 	}
 
+	logger.Log.Info(allURLs)
+
 	return &urls, nil
+}
+
+func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userUUID string) error {
+	shortIdsMap := make(map[string]bool)
+
+	for _, shortId := range shortIds {
+		shortIdsMap[shortId] = true
+	}
+
+	allURLs, err := r.GetAll(ctx)
+
+	if err != nil {
+		return nil
+	}
+
+	for i := 0; i < len(allURLs); i++ {
+		url := allURLs[i]
+		_, exists := shortIdsMap[url.Short]
+		if url.UserUUID == userUUID && exists {
+			allURLs[i].IsDeleted = true
+		}
+	}
+
+	data, err := json.Marshal(&allURLs)
+	if err != nil {
+		logger.Log.Error("Could not marshal json urls ", err)
+		return err
+	}
+
+	file, err := os.OpenFile(r.fileStoragePath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		logger.Log.Error("Could not open file to write urls ", err)
+		return err
+	}
+
+	defer file.Close()
+
+	file.Write(data)
+
+	return nil
 }
 
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
