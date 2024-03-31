@@ -27,6 +27,7 @@ type IService interface {
 	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
 	GenerateID() (string, error)
 	GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error)
+	DeleteBatch(ctx context.Context, shortIds []string, userId string) error
 }
 
 type ShortenResult struct {
@@ -164,6 +165,15 @@ func (s *Service) FindOriginal(short string) (string, error) {
 		return "", errNotFound
 	}
 	return url.Original, nil
+}
+
+func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userId string) error {
+	err := s.repo.DeleteBatch(ctx, shortIds, userId)
+	if err != nil {
+		logger.Log.Error("Could not delete batch: ", err)
+		return err
+	}
+	return nil
 }
 
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
