@@ -191,12 +191,18 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 
 	// Find original
 	originalURL, err := c.service.FindOriginal(short)
-	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
+
+	if err == service.ErrIsDeleted {
+		return ctx.SendStatus(http.StatusGone)
 	}
 
-	if originalURL == "" {
+	if err == service.ErrNotFound {
+		// should be 404
 		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
 	}
 
 	// Response
