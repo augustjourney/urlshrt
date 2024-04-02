@@ -28,7 +28,7 @@ type IService interface {
 	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
 	GenerateID() (string, error)
 	GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error)
-	DeleteBatch(ctx context.Context, shortIds []string, userId string) error
+	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
 }
 
 type ShortenResult struct {

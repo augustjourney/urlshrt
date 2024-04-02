@@ -145,8 +145,8 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userUUID string) error {
 	shortIdsMap := make(map[string]bool)
 
-	for _, shortId := range shortIds {
-		shortIdsMap[shortId] = true
+	for _, shortID := range shortIds {
+		shortIdsMap[shortID] = true
 	}
 
 	allURLs, err := r.GetAll(ctx)
