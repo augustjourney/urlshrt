@@ -172,8 +172,8 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	return url.Original, nil
 }
 
-func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userId string) error {
-	err := s.repo.DeleteBatch(ctx, shortIds, userId)
+func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userID string) error {
+	err := s.repo.DeleteBatch(ctx, shortIds, userID)
 	if err != nil {
 		logger.Log.Error("Could not delete batch: ", err)
 		return err
