@@ -162,12 +162,13 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	if err != nil {
 		return "", ErrInternalError
 	}
-	if url == nil {
+	if url.Original == "" {
 		return "", ErrNotFound
 	}
 	if url.IsDeleted {
 		return "", ErrIsDeleted
 	}
+	fmt.Println(url)
 	return url.Original, nil
 }
 
