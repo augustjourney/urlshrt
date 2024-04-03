@@ -103,9 +103,9 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 
 	for _, url := range urls {
 		_, err = tx.ExecContext(ctx, `
-			insert into urls (uuid, short, original)
-			values ($1, $2, $3)
-		`, url.UUID, url.Short, url.Original)
+			insert into urls (uuid, short, original, user_uuid)
+			values ($1, $2, $3, $4)
+		`, url.UUID, url.Short, url.Original, url.UserUUID)
 
 		if err != nil {
 			tx.Rollback()

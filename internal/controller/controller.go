@@ -90,7 +90,16 @@ func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
-	result, err := c.service.ShortenBatch(body)
+	userUUID := ctx.Cookies("user")
+
+	if userUUID == "" {
+		userUUID, err = c.service.GenerateID()
+		if err != nil {
+			return ctx.SendStatus(http.StatusInternalServerError)
+		}
+	}
+
+	result, err := c.service.ShortenBatch(body, userUUID)
 
 	if err != nil {
 		logger.Log.Error(err)

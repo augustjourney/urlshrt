@@ -25,7 +25,7 @@ type Service struct {
 type IService interface {
 	Shorten(originalURL string, userUUID string) (*ShortenResult, error)
 	FindOriginal(short string) (string, error)
-	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
+	ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error)
 	GenerateID() (string, error)
 	GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error)
 	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
@@ -114,7 +114,7 @@ func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, 
 	return &result, nil
 }
 
-func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
+func (s *Service) ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error) {
 	var urls []storage.URL
 	var result []BatchResultURL
 
@@ -139,6 +139,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 			Short:    short,
 			Original: url.OriginalURL,
 			UUID:     uuid,
+			UserUUID: userUUID,
 		})
 
 		result = append(result, BatchResultURL{
@@ -168,7 +169,6 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	if url.IsDeleted {
 		return "", ErrIsDeleted
 	}
-	fmt.Println(url)
 	return url.Original, nil
 }
 

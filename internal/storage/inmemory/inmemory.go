@@ -2,7 +2,6 @@ package inmemory
 
 import (
 	"context"
-
 	"github.com/augustjourney/urlshrt/internal/storage"
 )
 
