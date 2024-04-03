@@ -112,7 +112,7 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusMethodNotAllowed)
 	}
 
-	userUUID := ctx.Get("Authorization")
+	userUUID := ctx.Cookies("user")
 
 	var err error
 
