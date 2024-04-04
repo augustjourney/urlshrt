@@ -173,32 +173,10 @@ func (s *Service) FindOriginal(short string) (string, error) {
 
 func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID string) error {
 
-	resultCh := make(chan string)
-	updateCh := make(chan string, len(shortURLs))
+	ch := s.generator(shortURLs)
+	s.deleteURL(ctx, ch, userID)
 
-	var err error
-
-	go func() {
-		for _, short := range shortURLs {
-			err = s.repo.Delete(ctx, short, userID)
-			if err == nil {
-				updateCh <- short
-			}
-		}
-	}()
-
-	go func() {
-		for short := range updateCh {
-			resultCh <- short
-		}
-		close(resultCh)
-	}()
-
-	if err != nil {
-		logger.Log.Error("Could not delete batch: ", err)
-	}
-
-	return err
+	return nil
 }
 
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
@@ -222,5 +200,25 @@ func New(repo storage.IRepo, config *config.Config) Service {
 	return Service{
 		repo:   repo,
 		config: config,
+	}
+}
+
+func (s *Service) generator(shortURLs []string) chan string {
+	ch := make(chan string)
+	go func() {
+		defer close(ch)
+		for _, short := range shortURLs {
+			ch <- short
+		}
+	}()
+	return ch
+}
+
+func (s *Service) deleteURL(ctx context.Context, ch <-chan string, userID string) {
+	for short := range ch {
+		err := s.repo.Delete(ctx, short, userID)
+		if err != nil {
+			logger.Log.Error("Could not delete batch: ", err)
+		}
 	}
 }
