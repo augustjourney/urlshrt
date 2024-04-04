@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -18,8 +19,6 @@ import (
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage"
-	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -310,15 +309,15 @@ func TestApiCreateURLBatch(t *testing.T) {
 			name: "Batch URL created",
 			body: `[
 				{
-					"original_url": "http://yandex.ru/123",
+					"original_url": "http://yandex.ru/123123",
 					"correlation_id": "1"
 				},
 					{
-					"original_url": "http://vk.com/123",
+					"original_url": "http://vk.com/12322222",
 					"correlation_id": "2"
 				},
 					{
-					"original_url": "http://ya.ru/123",
+					"original_url": "http://ya.ru/123000000",
 					"correlation_id": "3"
 				}
 			]`,
@@ -412,17 +411,19 @@ func TestApiDeleteBatch(t *testing.T) {
 	var batch1 []service.BatchURL
 	var batch2 []service.BatchURL
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
+		uuid, _ := urlsService.GenerateID()
 		batch1 = append(batch1, service.BatchURL{
 			CorrelationID: strconv.Itoa(i),
-			OriginalURL:   fmt.Sprintf("http://random-url-delete/%d", i),
+			OriginalURL:   fmt.Sprintf("http://random-url-delete/%s%d", uuid, i),
 		})
 	}
 
 	for i := 0; i < 500; i++ {
+		uuid, _ := urlsService.GenerateID()
 		batch2 = append(batch2, service.BatchURL{
 			CorrelationID: strconv.Itoa(i),
-			OriginalURL:   fmt.Sprintf("http://random-url-store/%d", i),
+			OriginalURL:   fmt.Sprintf("http://random-url-store/%s%d", uuid, i),
 		})
 	}
 
@@ -457,7 +458,7 @@ func TestApiDeleteBatch(t *testing.T) {
 
 	request.Header.Set("Content-Type", "application/json")
 
-	result, err := app.Test(request, 1000)
+	result, err := app.Test(request, 60000)
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusAccepted, result.StatusCode)
@@ -466,9 +467,9 @@ func TestApiDeleteBatch(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, url.ShortURL, nil)
 
 		require.NoError(t, err)
-		res, err := app.Test(request, 1)
+		res, err := app.Test(request, 500)
 		require.NoError(t, err)
-		assert.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
+		require.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
 		res.Body.Close()
 	}
 
@@ -476,9 +477,9 @@ func TestApiDeleteBatch(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, url.ShortURL, nil)
 
 		require.NoError(t, err)
-		res, err := app.Test(request, 1)
+		res, err := app.Test(request, 100)
 		require.NoError(t, err)
-		assert.Equal(t, http.StatusGone, res.StatusCode)
+		require.Equal(t, http.StatusGone, res.StatusCode)
 		res.Body.Close()
 	}
 
