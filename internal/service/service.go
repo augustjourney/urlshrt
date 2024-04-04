@@ -5,12 +5,11 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"io"
-
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/google/uuid"
+	"io"
 )
 
 var ErrNotFound = errors.New("url not found")
@@ -50,6 +49,8 @@ type UserURLResult struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
+
+const deleteBatchSize = 250
 
 func (s *Service) GenerateID() (string, error) {
 	uuid, err := uuid.NewRandom()
@@ -173,11 +174,52 @@ func (s *Service) FindOriginal(short string) (string, error) {
 }
 
 func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userID string) error {
-	err := s.repo.DeleteBatch(ctx, shortIds, userID)
-	if err != nil {
-		logger.Log.Error("Could not delete batch: ", err)
-		return err
+
+	numJobs := len(shortIds)/deleteBatchSize + 1
+
+	jobs := make(chan []string, numJobs)
+
+	results := make(chan int, numJobs)
+
+	for w := 1; w <= 10; w++ {
+		id := w
+		go func() {
+			for data := range jobs {
+
+				err := s.repo.DeleteBatch(ctx, data, userID)
+				if err != nil {
+					logger.Log.Error("Could not delete batch: ", err)
+				}
+
+				results <- id
+			}
+		}()
 	}
+
+	batchStartIndex := 0
+	batchEndIndex := deleteBatchSize
+
+	if batchEndIndex > len(shortIds) {
+		batchEndIndex = len(shortIds)
+	}
+
+	for i := 0; i <= numJobs; i++ {
+		jobs <- shortIds[batchStartIndex:batchEndIndex]
+
+		if batchEndIndex == len(shortIds) {
+			break
+		}
+
+		batchStartIndex = batchEndIndex
+		batchEndIndex += deleteBatchSize
+
+		if batchEndIndex > len(shortIds) {
+			batchEndIndex = len(shortIds)
+		}
+	}
+
+	close(jobs)
+
 	return nil
 }
 
