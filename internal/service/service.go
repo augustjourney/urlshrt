@@ -175,51 +175,11 @@ func (s *Service) FindOriginal(short string) (string, error) {
 
 func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userID string) error {
 
-	numJobs := len(shortIds)/deleteBatchSize + 1
-
-	jobs := make(chan []string, numJobs)
-
-	results := make(chan int, numJobs)
-
-	for w := 1; w <= 10; w++ {
-		id := w
-		go func() {
-			for data := range jobs {
-
-				err := s.repo.DeleteBatch(ctx, data, userID)
-				if err != nil {
-					logger.Log.Error("Could not delete batch: ", err)
-				}
-
-				results <- id
-			}
-		}()
+	err := s.repo.DeleteBatch(ctx, shortIds, userID)
+	if err != nil {
+		logger.Log.Error("Could not delete batch: ", err)
+		return err
 	}
-
-	batchStartIndex := 0
-	batchEndIndex := deleteBatchSize
-
-	if batchEndIndex > len(shortIds) {
-		batchEndIndex = len(shortIds)
-	}
-
-	for i := 0; i <= numJobs; i++ {
-		jobs <- shortIds[batchStartIndex:batchEndIndex]
-
-		if batchEndIndex == len(shortIds) {
-			break
-		}
-
-		batchStartIndex = batchEndIndex
-		batchEndIndex += deleteBatchSize
-
-		if batchEndIndex > len(shortIds) {
-			batchEndIndex = len(shortIds)
-		}
-	}
-
-	close(jobs)
-
 	return nil
 }
 
