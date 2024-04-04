@@ -116,12 +116,12 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	return tx.Commit()
 }
 
-func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userID string) error {
+func (r *Repo) Delete(ctx context.Context, short string, userID string) error {
 	_, err := r.db.ExecContext(ctx, `
 			update urls
 			set is_deleted = true
-			where user_uuid = $1 and short = any($2)
-		`, userID, shortIds)
+			where user_uuid = $1 and short = $2
+		`, userID, short)
 
 	return err
 }

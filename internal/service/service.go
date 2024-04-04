@@ -50,8 +50,6 @@ type UserURLResult struct {
 	OriginalURL string `json:"original_url"`
 }
 
-const deleteBatchSize = 250
-
 func (s *Service) GenerateID() (string, error) {
 	uuid, err := uuid.NewRandom()
 
@@ -173,14 +171,34 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	return url.Original, nil
 }
 
-func (s *Service) DeleteBatch(ctx context.Context, shortIds []string, userID string) error {
+func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID string) error {
 
-	err := s.repo.DeleteBatch(ctx, shortIds, userID)
+	resultCh := make(chan string)
+	updateCh := make(chan string, len(shortURLs))
+
+	var err error
+
+	go func() {
+		for _, short := range shortURLs {
+			err = s.repo.Delete(ctx, short, userID)
+			if err == nil {
+				updateCh <- short
+			}
+		}
+	}()
+
+	go func() {
+		for short := range updateCh {
+			resultCh <- short
+		}
+		close(resultCh)
+	}()
+
 	if err != nil {
 		logger.Log.Error("Could not delete batch: ", err)
-		return err
 	}
-	return nil
+
+	return err
 }
 
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {

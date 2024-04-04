@@ -19,7 +19,7 @@ type IRepo interface {
 	GetByOriginal(ctx context.Context, original string) (*URL, error)
 	CreateBatch(ctx context.Context, urls []URL) error
 	GetByUserUUID(ctx context.Context, userUUID string) (*[]URL, error)
-	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
+	Delete(ctx context.Context, short string, userID string) error
 }
 
 var ErrAlreadyExists = errors.New("URL already exists")

@@ -142,12 +142,7 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 	return &urls, nil
 }
 
-func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userUUID string) error {
-	shortIdsMap := make(map[string]bool)
-
-	for _, shortID := range shortIds {
-		shortIdsMap[shortID] = true
-	}
+func (r *Repo) Delete(ctx context.Context, short string, userUUID string) error {
 
 	allURLs, err := r.GetAll(ctx)
 
@@ -157,8 +152,7 @@ func (r *Repo) DeleteBatch(ctx context.Context, shortIds []string, userUUID stri
 
 	for i := 0; i < len(allURLs); i++ {
 		url := allURLs[i]
-		_, exists := shortIdsMap[url.Short]
-		if url.UserUUID == userUUID && exists {
+		if url.UserUUID == userUUID && url.Short == short {
 			allURLs[i].IsDeleted = true
 		}
 	}
