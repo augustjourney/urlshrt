@@ -173,10 +173,24 @@ func (s *Service) FindOriginal(short string) (string, error) {
 
 func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID string) error {
 
-	ch := s.generator(shortURLs)
-	s.deleteURL(ctx, ch, userID)
+	deleteChan := make(chan []string)
+
+	go func(deleteChan chan<- []string, shortURLS []string) {
+		defer close(deleteChan)
+		deleteChan <- shortURLs
+	}(deleteChan, shortURLs)
+
+	go s.urlRemover(ctx, userID, deleteChan)
 
 	return nil
+}
+
+func (s *Service) urlRemover(ctx context.Context, userID string, deleteChan <-chan []string) {
+	shortURLs := <-deleteChan
+	err := s.repo.Delete(ctx, shortURLs, userID)
+	if err != nil {
+		logger.Log.Error("Could not delete batch: ", err)
+	}
 }
 
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
@@ -200,25 +214,5 @@ func New(repo storage.IRepo, config *config.Config) Service {
 	return Service{
 		repo:   repo,
 		config: config,
-	}
-}
-
-func (s *Service) generator(shortURLs []string) chan string {
-	ch := make(chan string)
-	go func() {
-		defer close(ch)
-		for _, short := range shortURLs {
-			ch <- short
-		}
-	}()
-	return ch
-}
-
-func (s *Service) deleteURL(ctx context.Context, ch <-chan string, userID string) {
-	for short := range ch {
-		err := s.repo.Delete(ctx, short, userID)
-		if err != nil {
-			logger.Log.Error("Could not delete batch: ", err)
-		}
 	}
 }

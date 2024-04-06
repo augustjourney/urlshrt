@@ -125,10 +125,6 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 
 	var err error
 
-	if userUUID == "" {
-		return ctx.SendStatus(http.StatusUnauthorized)
-	}
-
 	var shortIds []string
 
 	err = json.Unmarshal(ctx.Body(), &shortIds)

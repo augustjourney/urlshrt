@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
 	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -116,14 +115,45 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	return tx.Commit()
 }
 
-func (r *Repo) Delete(ctx context.Context, short string, userID string) error {
-	_, err := r.db.ExecContext(ctx, `
+func (r *Repo) Delete(ctx context.Context, shortURLs []string, userID string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	if userID == "" {
+		for _, short := range shortURLs {
+			_, err = tx.ExecContext(ctx, `
+			update urls
+			set is_deleted = true
+			where short = $1
+		`, short)
+
+			if err != nil {
+				return tx.Rollback()
+			}
+		}
+	} else {
+		for _, short := range shortURLs {
+			_, err = tx.ExecContext(ctx, `
 			update urls
 			set is_deleted = true
 			where user_uuid = $1 and short = $2
 		`, userID, short)
 
-	return err
+			if err != nil {
+				return tx.Rollback()
+			}
+		}
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		return tx.Rollback()
+	}
+
+	return nil
 }
 
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
