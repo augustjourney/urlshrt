@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/augustjourney/urlshrt/internal/logger"
@@ -197,11 +198,11 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 	// Find original
 	originalURL, err := c.service.FindOriginal(short)
 
-	if err == service.ErrIsDeleted {
+	if errors.Is(err, service.ErrIsDeleted) {
 		return ctx.SendStatus(http.StatusGone)
 	}
 
-	if err == service.ErrNotFound {
+	if errors.Is(err, service.ErrNotFound) {
 		// should be 404
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
