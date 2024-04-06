@@ -483,4 +483,6 @@ func TestApiDeleteBatch(t *testing.T) {
 		res.Body.Close()
 	}
 
+	_ = result.Body.Close()
+
 }
