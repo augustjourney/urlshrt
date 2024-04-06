@@ -47,11 +47,14 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	var err error
 
 	if userUUID == "" {
+		userUUID = ctx.Cookies("user")
+	}
+
+	if userUUID == "" {
 		userUUID, err = c.service.GenerateID()
 		if err != nil {
 			return ctx.SendStatus(http.StatusInternalServerError)
 		}
-		ctx.Set("Authorization", userUUID)
 	}
 
 	// Make a short url
@@ -65,6 +68,7 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	userCookie.Value = userUUID
 
 	ctx.Cookie(userCookie)
+	ctx.Set("Authorization", userUUID)
 
 	// Если уже существует такой url
 	// То возвращаем url и статус 409
@@ -122,10 +126,16 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusMethodNotAllowed)
 	}
 
-	userUUID := ctx.Get("authorization")
+	userUUID := ctx.Get("Authorization")
 	var err error
 
 	var shortIds []string
+
+	userCookie := ctx.Cookies("user")
+
+	if userCookie != "" {
+		userUUID = userCookie
+	}
 
 	err = json.Unmarshal(ctx.Body(), &shortIds)
 

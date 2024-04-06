@@ -120,30 +120,15 @@ func (r *Repo) Delete(ctx context.Context, shortURLs []string, userID string) er
 	if err != nil {
 		return err
 	}
-
-	if userID == "" {
-		for _, short := range shortURLs {
-			_, err = tx.ExecContext(ctx, `
-			update urls
-			set is_deleted = true
-			where short = $1
-		`, short)
-
-			if err != nil {
-				return tx.Rollback()
-			}
-		}
-	} else {
-		for _, short := range shortURLs {
-			_, err = tx.ExecContext(ctx, `
+	for _, short := range shortURLs {
+		_, err = tx.ExecContext(ctx, `
 			update urls
 			set is_deleted = true
 			where user_uuid = $1 and short = $2
 		`, userID, short)
 
-			if err != nil {
-				return tx.Rollback()
-			}
+		if err != nil {
+			return tx.Rollback()
 		}
 	}
 
