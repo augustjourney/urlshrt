@@ -454,7 +454,7 @@ func TestApiDeleteBatch(t *testing.T) {
 
 	request := httptest.NewRequest(http.MethodDelete, url, bytes.NewReader(requestBody))
 
-	request.AddCookie(&http.Cookie{Name: "user", Value: userID})
+	request.Header.Set("authorization", userID)
 
 	request.Header.Set("Content-Type", "application/json")
 
