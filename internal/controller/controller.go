@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
@@ -34,7 +35,11 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
-	// Getting url from text plain body
+	user, err := c.checkAuth(ctx, true)
+
+	if err != nil {
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
 
 	originalURL := string(ctx.Body())
 
@@ -42,33 +47,10 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
-	userUUID := ctx.Get("Authorization")
-
-	var err error
-
-	if userUUID == "" {
-		userUUID = ctx.Cookies("user")
-	}
-
-	if userUUID == "" {
-		userUUID, err = c.service.GenerateID()
-		if err != nil {
-			return ctx.SendStatus(http.StatusInternalServerError)
-		}
-	}
-
-	// Make a short url
-	result, err := c.service.Shorten(originalURL, userUUID)
+	result, err := c.service.Shorten(originalURL, user)
 	if err != nil {
 		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
 	}
-
-	userCookie := new(fiber.Cookie)
-	userCookie.Name = "user"
-	userCookie.Value = userUUID
-
-	ctx.Cookie(userCookie)
-	ctx.Set("Authorization", userUUID)
 
 	// Если уже существует такой url
 	// То возвращаем url и статус 409
@@ -86,25 +68,22 @@ func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
+	user, err := c.checkAuth(ctx, true)
+
+	if err != nil {
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
+
 	var body []service.BatchURL
 
-	err := json.Unmarshal(ctx.Body(), &body)
+	err = json.Unmarshal(ctx.Body(), &body)
 
 	if err != nil || len(body) == 0 {
 		logger.Log.Error(err)
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
-	userUUID := ctx.Cookies("user")
-
-	if userUUID == "" {
-		userUUID, err = c.service.GenerateID()
-		if err != nil {
-			return ctx.SendStatus(http.StatusInternalServerError)
-		}
-	}
-
-	result, err := c.service.ShortenBatch(body, userUUID)
+	result, err := c.service.ShortenBatch(body, user)
 
 	if err != nil {
 		logger.Log.Error(err)
@@ -126,16 +105,15 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusMethodNotAllowed)
 	}
 
-	userUUID := ctx.Get("Authorization")
+	user, _ := c.checkAuth(ctx, false)
+
+	if user == "" {
+		return ctx.SendStatus(http.StatusUnauthorized)
+	}
+
 	var err error
 
 	var shortIds []string
-
-	userCookie := ctx.Cookies("user")
-
-	if userCookie != "" {
-		userUUID = userCookie
-	}
 
 	err = json.Unmarshal(ctx.Body(), &shortIds)
 
@@ -144,7 +122,10 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
-	err = c.service.DeleteBatch(context.TODO(), shortIds, userUUID)
+	rctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = c.service.DeleteBatch(rctx, shortIds, user)
 
 	if err != nil {
 		return ctx.SendStatus(http.StatusInternalServerError)
@@ -160,9 +141,15 @@ func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
+	user, err := c.checkAuth(ctx, true)
+
+	if err != nil {
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
+
 	var body APICreateURLBody
 
-	err := json.Unmarshal(ctx.Body(), &body)
+	err = json.Unmarshal(ctx.Body(), &body)
 
 	if err != nil || body.URL == "" {
 		logger.Log.Error(err)
@@ -170,7 +157,7 @@ func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	}
 
 	// Make a short url
-	result, err := c.service.Shorten(body.URL, "api")
+	result, err := c.service.Shorten(body.URL, user)
 	if err != nil {
 		return ctx.Status(http.StatusInternalServerError).SendString(err.Error())
 	}
@@ -207,6 +194,8 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 	// Find original
 	originalURL, err := c.service.FindOriginal(short)
 
+	// TODO: наверное, будет лучше вынести эти ошибки из сервиса
+	// Куда-то в отдельный модуль со всеми ошибками
 	if errors.Is(err, service.ErrIsDeleted) {
 		return ctx.SendStatus(http.StatusGone)
 	}
@@ -232,13 +221,13 @@ func (c *Controller) GetUserURLs(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusMethodNotAllowed)
 	}
 
-	userUUID := ctx.Get("Authorization")
+	user, _ := c.checkAuth(ctx, false)
 
-	if userUUID == "" {
+	if user == "" {
 		return ctx.SendStatus(http.StatusUnauthorized)
 	}
 
-	urls, err := c.service.GetUserURLs(context.Background(), userUUID)
+	urls, err := c.service.GetUserURLs(context.Background(), user)
 
 	if err != nil {
 		return ctx.SendStatus(http.StatusInternalServerError)
@@ -256,6 +245,36 @@ func (c *Controller) GetUserURLs(ctx *fiber.Ctx) error {
 
 	return ctx.Status(http.StatusOK).Send(response)
 
+}
+
+func (c *Controller) checkAuth(ctx *fiber.Ctx, createIfEmpty bool) (string, error) {
+	// ID пользователя может храниться
+	// Либо в заголовке Authorization
+	// Либо в куке user
+	user := ctx.Get("Authorization")
+	cookie := ctx.Cookies("user")
+
+	if cookie != "" && user == "" {
+		user = cookie
+	}
+
+	if createIfEmpty && user == "" {
+		user, err := c.service.GenerateID()
+		if err != nil {
+			return "", err
+		}
+
+		cookie := new(fiber.Cookie)
+		cookie.Name = "user"
+		cookie.Value = user
+
+		ctx.Cookie(cookie)
+
+		ctx.Set("Authorization", user)
+		return user, nil
+	}
+
+	return user, nil
 }
 
 func New(service service.IService) Controller {
