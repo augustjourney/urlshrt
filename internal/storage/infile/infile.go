@@ -122,6 +122,69 @@ func (r *Repo) GetAll(ctx context.Context) ([]storage.URL, error) {
 	return urls, nil
 }
 
+func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
+	var urls []storage.URL
+
+	allURLs, err := r.GetAll(ctx)
+
+	if err != nil {
+		return &urls, nil
+	}
+
+	for i := 0; i < len(allURLs); i++ {
+		if allURLs[i].UserUUID == userUUID && !allURLs[i].IsDeleted {
+			urls = append(urls, allURLs[i])
+		}
+	}
+
+	logger.Log.Info(allURLs)
+
+	return &urls, nil
+}
+
+func (r *Repo) Delete(ctx context.Context, shortURLs []string, userUUID string) error {
+
+	allURLs, err := r.GetAll(ctx)
+
+	if err != nil {
+		return nil
+	}
+
+	shortUrlsMap := make(map[string]bool)
+
+	for _, short := range shortURLs {
+		shortUrlsMap[short] = true
+	}
+
+	for i := 0; i < len(allURLs); i++ {
+		url := allURLs[i]
+		_, ok := shortUrlsMap[url.Short]
+		if userUUID == "" {
+			allURLs[i].IsDeleted = true
+		} else if url.UserUUID == userUUID && ok {
+			allURLs[i].IsDeleted = true
+		}
+	}
+
+	data, err := json.Marshal(&allURLs)
+	if err != nil {
+		logger.Log.Error("Could not marshal json urls ", err)
+		return err
+	}
+
+	file, err := os.OpenFile(r.fileStoragePath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		logger.Log.Error("Could not open file to write urls ", err)
+		return err
+	}
+
+	defer file.Close()
+
+	file.Write(data)
+
+	return nil
+}
+
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 
 	var url storage.URL

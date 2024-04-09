@@ -13,8 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var errNotFound = errors.New("url not found")
-var errInternalError = errors.New("internal error")
+var ErrNotFound = errors.New("url not found")
+var ErrIsDeleted = errors.New("url is deleted")
+var ErrInternalError = errors.New("internal error")
 
 type Service struct {
 	repo   storage.IRepo
@@ -22,9 +23,12 @@ type Service struct {
 }
 
 type IService interface {
-	Shorten(originalURL string) (*ShortenResult, error)
+	Shorten(originalURL string, userUUID string) (*ShortenResult, error)
 	FindOriginal(short string) (string, error)
-	ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error)
+	ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error)
+	GenerateID() (string, error)
+	GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error)
+	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
 }
 
 type ShortenResult struct {
@@ -42,7 +46,12 @@ type BatchResultURL struct {
 	CorrelationID string `json:"correlation_id"`
 }
 
-func (s *Service) generateID() (string, error) {
+type UserURLResult struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+func (s *Service) GenerateID() (string, error) {
 	uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -63,21 +72,22 @@ func (s *Service) buildShortURL(short string) string {
 	return s.config.BaseURL + "/" + short
 }
 
-func (s *Service) Shorten(originalURL string) (*ShortenResult, error) {
+func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, error) {
 	short := s.hashURL(originalURL)
-	uuid, err := s.generateID()
+	uuid, err := s.GenerateID()
 	result := ShortenResult{
 		ResultURL:     "",
 		AlreadyExists: false,
 	}
 	if err != nil {
-		return &result, errInternalError
+		return &result, ErrInternalError
 	}
 	ctx := context.TODO()
 	err = s.repo.Create(ctx, storage.URL{
 		UUID:     uuid,
 		Short:    short,
 		Original: originalURL,
+		UserUUID: userUUID,
 	})
 
 	if err != nil {
@@ -88,7 +98,7 @@ func (s *Service) Shorten(originalURL string) (*ShortenResult, error) {
 			url, err := s.repo.GetByOriginal(ctx, originalURL)
 
 			if err != nil {
-				return &result, errInternalError
+				return &result, ErrInternalError
 			}
 
 			result.AlreadyExists = true
@@ -96,7 +106,7 @@ func (s *Service) Shorten(originalURL string) (*ShortenResult, error) {
 
 			return &result, err
 		}
-		return &result, errInternalError
+		return &result, ErrInternalError
 	}
 
 	result.ResultURL = s.buildShortURL(short)
@@ -104,7 +114,7 @@ func (s *Service) Shorten(originalURL string) (*ShortenResult, error) {
 	return &result, nil
 }
 
-func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
+func (s *Service) ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error) {
 	var urls []storage.URL
 	var result []BatchResultURL
 
@@ -119,7 +129,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 
 		short := s.hashURL(url.OriginalURL)
 
-		uuid, err := s.generateID()
+		uuid, err := s.GenerateID()
 
 		if err != nil {
 			return nil, err
@@ -129,6 +139,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 			Short:    short,
 			Original: url.OriginalURL,
 			UUID:     uuid,
+			UserUUID: userUUID,
 		})
 
 		result = append(result, BatchResultURL{
@@ -141,7 +152,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 
 	if err != nil {
 		logger.Log.Error(err)
-		return result, errInternalError
+		return result, ErrInternalError
 	}
 
 	return result, nil
@@ -150,12 +161,43 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL) ([]BatchResultURL, error) {
 func (s *Service) FindOriginal(short string) (string, error) {
 	url, err := s.repo.Get(context.TODO(), short)
 	if err != nil {
-		return "", errInternalError
+		return "", ErrInternalError
 	}
-	if url == nil {
-		return "", errNotFound
+	if url.Original == "" {
+		return "", ErrNotFound
+	}
+	if url.IsDeleted {
+		return "", ErrIsDeleted
 	}
 	return url.Original, nil
+}
+
+func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID string) error {
+
+	err := s.repo.Delete(ctx, shortURLs, userID)
+	if err != nil {
+		logger.Log.Error("Could not delete batch: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error) {
+	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
+	if err != nil {
+		return nil, ErrInternalError
+	}
+
+	var result []UserURLResult
+
+	for _, url := range *urls {
+		result = append(result, UserURLResult{
+			ShortURL:    s.buildShortURL(url.Short),
+			OriginalURL: url.Original,
+		})
+	}
+	return result, nil
 }
 
 func New(repo storage.IRepo, config *config.Config) Service {

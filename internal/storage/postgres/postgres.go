@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
 	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -52,15 +51,33 @@ func (r *Repo) Init(ctx context.Context) error {
 		return err
 	}
 
+	_, err = tx.ExecContext(ctx, `
+		ALTER TABLE urls ADD COLUMN IF NOT EXISTS user_uuid VARCHAR;
+	`)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		ALTER TABLE urls ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
+	`)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return tx.Commit()
 }
 
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
 	_, err := r.db.ExecContext(ctx, `
-		insert into urls (uuid, short, original)
-		values ($1, $2, $3)
-	`, url.UUID, url.Short, url.Original)
+		insert into urls (uuid, short, original, user_uuid)
+		values ($1, $2, $3, $4)
+	`, url.UUID, url.Short, url.Original, url.UserUUID)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -85,9 +102,9 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 
 	for _, url := range urls {
 		_, err = tx.ExecContext(ctx, `
-			insert into urls (uuid, short, original)
-			values ($1, $2, $3)
-		`, url.UUID, url.Short, url.Original)
+			insert into urls (uuid, short, original, user_uuid)
+			values ($1, $2, $3, $4)
+		`, url.UUID, url.Short, url.Original, url.UserUUID)
 
 		if err != nil {
 			tx.Rollback()
@@ -96,6 +113,32 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	}
 
 	return tx.Commit()
+}
+
+func (r *Repo) Delete(ctx context.Context, shortURLs []string, userID string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, short := range shortURLs {
+		_, err = tx.ExecContext(ctx, `
+			update urls
+			set is_deleted = true
+			where user_uuid = $1 and short = $2
+		`, userID, short)
+
+		if err != nil {
+			return tx.Rollback()
+		}
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		return tx.Rollback()
+	}
+
+	return nil
 }
 
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
@@ -121,19 +164,53 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	var url storage.URL
 
 	row := r.db.QueryRowContext(ctx, `
-		select uuid, short, original 
+		select uuid, short, original, is_deleted
 		from urls
 		where short = $1
 
 	`, short)
 
-	err := row.Scan(&url.UUID, &url.Short, &url.Original)
+	err := row.Scan(&url.UUID, &url.Short, &url.Original, &url.IsDeleted)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &url, nil
+}
+
+func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
+	var urls []storage.URL
+
+	rows, err := r.db.QueryContext(ctx, `
+		select short, original 
+		from urls
+		where user_uuid = $1
+
+	`, userUUID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var url storage.URL
+		err = rows.Scan(&url.Short, &url.Original)
+		if err != nil {
+			return nil, err
+		}
+
+		urls = append(urls, url)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return &urls, nil
 }
 
 func New(ctx context.Context, db *sql.DB) (*Repo, error) {

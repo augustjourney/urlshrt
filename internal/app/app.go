@@ -13,6 +13,8 @@ type Controller interface {
 	APICreateURL(ctx *fiber.Ctx) error
 	GetURL(ctx *fiber.Ctx) error
 	APICreateURLBatch(ctx *fiber.Ctx) error
+	GetUserURLs(ctx *fiber.Ctx) error
+	APIDeleteBatch(ctx *fiber.Ctx) error
 }
 
 // Временное решение прокидывать db в контроллер
@@ -35,6 +37,8 @@ func New(c Controller, db *sql.DB) *fiber.App {
 	app.Post("/api/shorten", c.APICreateURL)
 	app.Post("/api/shorten/batch", c.APICreateURLBatch)
 	app.Get("/:short", c.GetURL)
+	app.Get("/api/user/urls", c.GetUserURLs)
+	app.Delete("/api/user/urls", c.APIDeleteBatch)
 	app.Use("/*", c.BadRequest)
 
 	return app

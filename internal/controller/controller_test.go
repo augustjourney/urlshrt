@@ -5,10 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/augustjourney/urlshrt/internal/app"
@@ -16,14 +19,12 @@ import (
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"github.com/augustjourney/urlshrt/internal/storage"
-	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func newAppInstance() (*fiber.App, storage.IRepo) {
+func newAppInstance() (*fiber.App, storage.IRepo, service.Service) {
 	config := config.New()
 	logger.New()
 
@@ -33,12 +34,12 @@ func newAppInstance() (*fiber.App, storage.IRepo) {
 
 	app := app.New(&controller, nil)
 
-	return app, repo
+	return app, repo, service
 }
 
 func TestGetURL(t *testing.T) {
 
-	app, repo := newAppInstance()
+	app, repo, _ := newAppInstance()
 
 	url1 := storage.URL{
 		UUID:     "some-uuid-1",
@@ -142,7 +143,7 @@ func TestGetURL(t *testing.T) {
 }
 
 func TestCreateURL(t *testing.T) {
-	app, _ := newAppInstance()
+	app, _, _ := newAppInstance()
 
 	type want struct {
 		code        int
@@ -214,7 +215,7 @@ func TestCreateURL(t *testing.T) {
 }
 
 func TestApiCreateURL(t *testing.T) {
-	app, _ := newAppInstance()
+	app, _, _ := newAppInstance()
 
 	type want struct {
 		code        int
@@ -291,7 +292,7 @@ func TestApiCreateURL(t *testing.T) {
 }
 
 func TestApiCreateURLBatch(t *testing.T) {
-	app, _ := newAppInstance()
+	app, _, _ := newAppInstance()
 
 	type want struct {
 		code             int
@@ -308,15 +309,15 @@ func TestApiCreateURLBatch(t *testing.T) {
 			name: "Batch URL created",
 			body: `[
 				{
-					"original_url": "http://yandex.ru/123",
+					"original_url": "http://yandex.ru/123123",
 					"correlation_id": "1"
 				},
 					{
-					"original_url": "http://vk.com/123",
+					"original_url": "http://vk.com/12322222",
 					"correlation_id": "2"
 				},
 					{
-					"original_url": "http://ya.ru/123",
+					"original_url": "http://ya.ru/123000000",
 					"correlation_id": "3"
 				}
 			]`,
@@ -390,4 +391,98 @@ func TestApiCreateURLBatch(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestApiDeleteBatch(t *testing.T) {
+	app, _, urlsService := newAppInstance()
+
+	// Нужно создать какое-то количество урлов
+	// Которые будут удалены
+	// По ним будем проверять статус удаления
+	// То есть будем проходить по ним и проверять
+	// Действительно ли был удален и статус 409
+
+	// Также создать какое-то количество урлов
+	// Которые не будут удалены
+	// По ним должен быть статус 307
+
+	// Для создания всех этих урлов можно использовать batch create
+
+	var batch1 []service.BatchURL
+	var batch2 []service.BatchURL
+
+	for i := 0; i < 1000; i++ {
+		uuid, _ := urlsService.GenerateID()
+		batch1 = append(batch1, service.BatchURL{
+			CorrelationID: strconv.Itoa(i),
+			OriginalURL:   fmt.Sprintf("http://random-url-delete/%s%d", uuid, i),
+		})
+	}
+
+	for i := 0; i < 500; i++ {
+		uuid, _ := urlsService.GenerateID()
+		batch2 = append(batch2, service.BatchURL{
+			CorrelationID: strconv.Itoa(i),
+			OriginalURL:   fmt.Sprintf("http://random-url-store/%s%d", uuid, i),
+		})
+	}
+
+	userID := "user-123"
+
+	urlsToStore, err := urlsService.ShortenBatch(batch2, userID)
+	assert.NoError(t, err)
+
+	urlsToDelete, err := urlsService.ShortenBatch(batch1, userID)
+	assert.NoError(t, err)
+
+	// Сейчас созданы все необходимые урлы
+	// Можно тестировать, удалять и смотреть на результаты
+
+	url := "/api/user/urls"
+
+	var shortUrls []string
+
+	for _, url := range urlsToDelete {
+		// В ответе от сервиса short url будем вместе с хостом
+		// поэтому отделяем по последнему слэшу
+		lastSlash := strings.LastIndex(url.ShortURL, "/")
+		shortUrls = append(shortUrls, url.ShortURL[lastSlash+1:])
+	}
+
+	requestBody, err := json.Marshal(shortUrls)
+	assert.NoError(t, err)
+
+	request := httptest.NewRequest(http.MethodDelete, url, bytes.NewReader(requestBody))
+
+	request.Header.Set("authorization", userID)
+
+	request.Header.Set("Content-Type", "application/json")
+
+	result, err := app.Test(request, 60000)
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusAccepted, result.StatusCode)
+
+	for _, url := range urlsToStore {
+		request := httptest.NewRequest(http.MethodGet, url.ShortURL, nil)
+
+		require.NoError(t, err)
+		res, err := app.Test(request, 500)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
+		res.Body.Close()
+	}
+
+	for _, url := range urlsToDelete {
+		request := httptest.NewRequest(http.MethodGet, url.ShortURL, nil)
+
+		require.NoError(t, err)
+		res, err := app.Test(request, 100)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusGone, res.StatusCode)
+		res.Body.Close()
+	}
+
+	_ = result.Body.Close()
+
 }
