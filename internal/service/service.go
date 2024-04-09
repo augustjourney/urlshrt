@@ -5,11 +5,12 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/google/uuid"
-	"io"
 )
 
 var ErrNotFound = errors.New("url not found")
@@ -26,7 +27,7 @@ type IService interface {
 	FindOriginal(short string) (string, error)
 	ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error)
 	GenerateID() (string, error)
-	GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error)
+	GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error)
 	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
 }
 
@@ -182,7 +183,7 @@ func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID st
 	return nil
 }
 
-func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLResult, error) {
+func (s *Service) GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error) {
 	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
 	if err != nil {
 		return nil, ErrInternalError
@@ -196,7 +197,7 @@ func (s *Service) GetUserURLs(ctx context.Context, userUUID string) (*[]UserURLR
 			OriginalURL: url.Original,
 		})
 	}
-	return &result, nil
+	return result, nil
 }
 
 func New(repo storage.IRepo, config *config.Config) Service {

@@ -78,8 +78,13 @@ func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 
 	err = json.Unmarshal(ctx.Body(), &body)
 
-	if err != nil || len(body) == 0 {
+	if err != nil {
 		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	if len(body) == 0 {
+		logger.Log.Error("empty body in creating url batch")
 		return ctx.SendStatus(http.StatusBadRequest)
 	}
 
@@ -105,13 +110,16 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusMethodNotAllowed)
 	}
 
-	user, _ := c.checkAuth(ctx, false)
+	user, err := c.checkAuth(ctx, false)
+
+	if err != nil {
+		logger.Log.Error(err)
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
 
 	if user == "" {
 		return ctx.SendStatus(http.StatusUnauthorized)
 	}
-
-	var err error
 
 	var shortIds []string
 
@@ -233,7 +241,7 @@ func (c *Controller) GetUserURLs(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(http.StatusInternalServerError)
 	}
 
-	if urls == nil || len(*urls) == 0 {
+	if len(urls) == 0 {
 		return ctx.SendStatus(http.StatusNoContent)
 	}
 
