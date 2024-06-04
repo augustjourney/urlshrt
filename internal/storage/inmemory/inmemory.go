@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"context"
+
 	"github.com/augustjourney/urlshrt/internal/storage"
 )
 
@@ -85,6 +86,6 @@ func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL
 }
 
 func New() *Repo {
-	UrlsInMemory = make([]storage.URL, 0)
+	UrlsInMemory = make([]storage.URL, 100000)
 	return &Repo{}
 }
