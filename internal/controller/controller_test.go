@@ -158,7 +158,7 @@ func BenchmarkGetURL(b *testing.B) {
 	b.Run("create url", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			request := httptest.NewRequest(http.MethodGet, "/"+url.Short, nil)
-			result, err := app.Test(request, 10)
+			result, err := app.Test(request, 100)
 			require.NoError(b, err)
 			result.Body.Close()
 		}
@@ -221,7 +221,7 @@ func TestCreateURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			url := "/"
 			request := httptest.NewRequest(tt.method, url, bytes.NewReader([]byte(tt.originalURL)))
-			result, err := app.Test(request, 10)
+			result, err := app.Test(request, 100)
 			require.NoError(t, err)
 			resultBody, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
@@ -245,7 +245,7 @@ func BenchmarkCreateURL(b *testing.B) {
 			originalURL, err := uuid.NewRandom()
 			require.NoError(b, err)
 			request := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte(originalURL.String())))
-			result, err := app.Test(request, 10)
+			result, err := app.Test(request, 100)
 			require.NoError(b, err)
 			result.Body.Close()
 		}
@@ -310,7 +310,7 @@ func TestApiCreateURL(t *testing.T) {
 			request := httptest.NewRequest(tt.method, url, bytes.NewReader(body))
 			request.Header.Set("Content-Type", tt.want.contentType)
 
-			result, err := app.Test(request, 10)
+			result, err := app.Test(request, 100)
 			require.NoError(t, err)
 
 			var resultBody APICreateURLResult
@@ -340,7 +340,7 @@ func BenchmarkApiCreateURL(b *testing.B) {
 				URL: originalURL.String(),
 			})
 			request := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
-			result, err := app.Test(request, 10)
+			result, err := app.Test(request, 100)
 			require.NoError(b, err)
 			result.Body.Close()
 		}
@@ -425,7 +425,7 @@ func TestApiCreateURLBatch(t *testing.T) {
 
 			request.Header.Set("Content-Type", tt.want.contentType)
 
-			result, err := app.Test(request, 10)
+			result, err := app.Test(request, 100)
 			require.NoError(t, err)
 
 			var resultBody []service.BatchResultURL
