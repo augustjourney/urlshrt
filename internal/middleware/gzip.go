@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Middleware — который создает сжатие входящих http-запросов
 func RequestCompress(ctx *fiber.Ctx) error {
 
 	// Processing request compress

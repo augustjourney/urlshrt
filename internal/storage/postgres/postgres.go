@@ -11,10 +11,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// репозиторий с методами хранилища
 type Repo struct {
 	db *sql.DB
 }
 
+// создает изначальные таблицы и индексы в базе — если их нет
 func (r *Repo) Init(ctx context.Context) error {
 	tx, err := r.db.Begin()
 	if err != nil {

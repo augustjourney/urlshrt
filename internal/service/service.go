@@ -14,15 +14,22 @@ import (
 	"github.com/google/uuid"
 )
 
+// Ошибка если ссылка не найдена
 var ErrNotFound = errors.New("url not found")
+
+// Ошибка если ссылка удалена
 var ErrIsDeleted = errors.New("url is deleted")
+
+// Ошибка если произошла какая-то внутренняя ошибка
 var ErrInternalError = errors.New("internal error")
 
+// сервис с методами по работе с ссылками
 type Service struct {
 	repo   storage.IRepo
 	config *config.Config
 }
 
+// Интерфейс — который описывает методы сервиса
 type IService interface {
 	Shorten(originalURL string, userUUID string) (*ShortenResult, error)
 	FindOriginal(short string) (string, error)
@@ -32,21 +39,25 @@ type IService interface {
 	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
 }
 
+// Результат сокращения ссылки
 type ShortenResult struct {
 	ResultURL     string
 	AlreadyExists bool
 }
 
+// Структура ссылки при создании множества ссылок
 type BatchURL struct {
 	OriginalURL   string `json:"original_url"`
 	CorrelationID string `json:"correlation_id"`
 }
 
+// Результат сокращения множества ссылок
 type BatchResultURL struct {
 	ShortURL      string `json:"short_url"`
 	CorrelationID string `json:"correlation_id"`
 }
 
+// Результат получения сокращенных ссылок конкретного пользователя
 type UserURLResult struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`

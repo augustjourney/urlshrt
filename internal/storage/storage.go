@@ -16,6 +16,7 @@ type URL struct {
 	IsDeleted bool
 }
 
+// описывает методы хранилища
 type IRepo interface {
 	Create(ctx context.Context, url URL) error
 	Get(ctx context.Context, short string) (*URL, error)
@@ -25,4 +26,5 @@ type IRepo interface {
 	Delete(ctx context.Context, short []string, userID string) error
 }
 
+// ошибка если ссылка уже существует
 var ErrAlreadyExists = errors.New("URL already exists")
