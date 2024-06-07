@@ -1,4 +1,4 @@
-package main
+package controller
 
 import (
 	"bytes"
@@ -7,13 +7,12 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/augustjourney/urlshrt/internal/controller"
 	"github.com/augustjourney/urlshrt/internal/service"
 )
 
 const serverAddr = "http://localhost:8000"
 
-func ExampleGetURL() {
+func ExampleController_GetURL() {
 	resp, err := http.Get(serverAddr)
 	if err != nil {
 		fmt.Println(err)
@@ -33,7 +32,7 @@ func ExampleGetURL() {
 	fmt.Println(body)
 }
 
-func ExampleCreateURL() {
+func ExampleController_CreateURL() {
 	originalURL := "http://ya.ru"
 
 	payload := bytes.NewReader([]byte(originalURL))
@@ -58,10 +57,10 @@ func ExampleCreateURL() {
 	fmt.Println(body)
 }
 
-func ExampleAPICreateURL() {
+func ExampleController_APICreateURL() {
 	originalURL := "http://ya.ru"
 
-	payload, err := json.Marshal(controller.APICreateURLBody{
+	payload, err := json.Marshal(APICreateURLBody{
 		URL: originalURL,
 	})
 
@@ -73,7 +72,6 @@ func ExampleAPICreateURL() {
 		fmt.Println(err)
 		return
 	}
-
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -88,14 +86,14 @@ func ExampleAPICreateURL() {
 	fmt.Println(body)
 }
 
-func ExampleAPICreateURLBatch() {
+func ExampleController_APICreateURLBatch() {
 	payload, err := json.Marshal([]service.BatchURL{
 		{
-			OriginalURL: "http://ya.ru",
+			OriginalURL:   "http://ya.ru",
 			CorrelationID: "1",
 		},
 		{
-			OriginalURL: "http://vk.com",
+			OriginalURL:   "http://vk.com",
 			CorrelationID: "2",
 		},
 	})
@@ -109,7 +107,6 @@ func ExampleAPICreateURLBatch() {
 		fmt.Println(err)
 		return
 	}
-
 
 	body, err := io.ReadAll(resp.Body)
 
