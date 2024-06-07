@@ -24,7 +24,6 @@ type APICreateURLBody struct {
 }
 
 // Резлуьтат по сокращению ссылок в api-запросе
-
 type APICreateURLResult struct {
 	Result string `json:"result"`
 }
