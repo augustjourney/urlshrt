@@ -1,9 +1,11 @@
+// модуль отвечает за сохранение данных о ссылках в postgres
 package postgres
 
 import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"github.com/augustjourney/urlshrt/internal/storage"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -72,6 +74,7 @@ func (r *Repo) Init(ctx context.Context) error {
 	return tx.Commit()
 }
 
+// создает ссылку в бд
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
 	_, err := r.db.ExecContext(ctx, `
@@ -94,6 +97,7 @@ func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 	return err
 }
 
+// создает множество ссылок в бд
 func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -115,6 +119,7 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	return tx.Commit()
 }
 
+// удаляет ссылку из бд
 func (r *Repo) Delete(ctx context.Context, shortURLs []string, userID string) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -141,6 +146,7 @@ func (r *Repo) Delete(ctx context.Context, shortURLs []string, userID string) er
 	return nil
 }
 
+// получает оригинальную ссылку по короткой
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
 	var url storage.URL
 
@@ -160,6 +166,7 @@ func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL
 	return &url, nil
 }
 
+// получает информацию ссылке по короткой
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	var url storage.URL
 
@@ -179,6 +186,7 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	return &url, nil
 }
 
+// получает ссылки пользователя
 func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
 	var urls []storage.URL
 
@@ -213,6 +221,7 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 	return &urls, nil
 }
 
+// создает новый экземпляр postgres-репозитория
 func New(ctx context.Context, db *sql.DB) (*Repo, error) {
 	repo := Repo{
 		db: db,

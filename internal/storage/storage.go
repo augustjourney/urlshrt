@@ -1,3 +1,5 @@
+// модуль storage отвечает за сохранение данных о ссылках.
+// поддерживается сохранение в памяти, в файле и базе данных postgres.
 package storage
 
 import (
@@ -5,6 +7,7 @@ import (
 	"errors"
 )
 
+// хранит информацию о ссылке
 type URL struct {
 	UUID      string `json:"uuid,omitempty"`
 	Short     string `json:"short_url"`

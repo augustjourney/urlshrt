@@ -1,3 +1,4 @@
+// модуль controller отвечает за принятие http-запросов к сервису.
 package controller
 
 import (

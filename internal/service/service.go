@@ -1,3 +1,4 @@
+// модуль отвечает за ключевую логику создания, получения и удаления ссылок.
 package service
 
 import (
@@ -51,6 +52,7 @@ type UserURLResult struct {
 	OriginalURL string `json:"original_url"`
 }
 
+// генерирует случайный ID в формате строки UUID v4
 func (s *Service) GenerateID() (string, error) {
 	uuid, err := uuid.NewRandom()
 
@@ -72,6 +74,7 @@ func (s *Service) buildShortURL(short string) string {
 	return s.config.BaseURL + "/" + short
 }
 
+// сокращает оригинальную ссылку в короткую
 func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, error) {
 	short := s.hashURL(originalURL)
 	uuid, err := s.GenerateID()
@@ -114,6 +117,7 @@ func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, 
 	return &result, nil
 }
 
+// сокращает массив оригинальных ссылок в короткие
 func (s *Service) ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error) {
 	var urls []storage.URL
 	var result []BatchResultURL
@@ -158,6 +162,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchRe
 	return result, nil
 }
 
+// находит оригинальную ссылку по короткому адресу
 func (s *Service) FindOriginal(short string) (string, error) {
 	url, err := s.repo.Get(context.TODO(), short)
 	if err != nil {
@@ -172,6 +177,7 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	return url.Original, nil
 }
 
+// удаляет массив ссылок
 func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID string) error {
 
 	err := s.repo.Delete(ctx, shortURLs, userID)
@@ -183,6 +189,7 @@ func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID st
 	return nil
 }
 
+// получает ссылки для конкретного пользователя
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error) {
 	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
 	if err != nil {
@@ -200,6 +207,7 @@ func (s *Service) GetUserURLs(ctx context.Context, userUUID string) ([]UserURLRe
 	return result, nil
 }
 
+// создает новый экземпляр модуля
 func New(repo storage.IRepo, config *config.Config) Service {
 	return Service{
 		repo:   repo,
