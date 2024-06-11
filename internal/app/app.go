@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Интерфейс — который описывает методы контроллера
 type Controller interface {
 	BadRequest(ctx *fiber.Ctx) error
 	CreateURL(ctx *fiber.Ctx) error
@@ -17,8 +18,7 @@ type Controller interface {
 	APIDeleteBatch(ctx *fiber.Ctx) error
 }
 
-// Временное решение прокидывать db в контроллер
-// Позже db будет прокидываться только в repo
+// Создает новый экземпляр приложения
 func New(c Controller, db *sql.DB) *fiber.App {
 	app := fiber.New()
 

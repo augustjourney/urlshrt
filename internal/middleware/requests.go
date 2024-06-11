@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Middleware — который логгирует входящие http-запросы
 func RequestLogger(ctx *fiber.Ctx) error {
 	start := time.Now()
 	result := ctx.Next()

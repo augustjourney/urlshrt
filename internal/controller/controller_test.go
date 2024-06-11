@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/augustjourney/urlshrt/internal/storage/inmemory"
+	"github.com/google/uuid"
 
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
@@ -142,6 +144,27 @@ func TestGetURL(t *testing.T) {
 	}
 }
 
+func BenchmarkGetURL(b *testing.B) {
+	app, repo, _ := newAppInstance()
+
+	url := storage.URL{
+		UUID:     "some-uuid-1",
+		Short:    "shrturl1",
+		Original: "http://google.com",
+	}
+
+	repo.Create(context.TODO(), url)
+
+	b.Run("create url", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			request := httptest.NewRequest(http.MethodGet, "/"+url.Short, nil)
+			result, err := app.Test(request, 100)
+			require.NoError(b, err)
+			result.Body.Close()
+		}
+	})
+}
+
 func TestCreateURL(t *testing.T) {
 	app, _, _ := newAppInstance()
 
@@ -198,7 +221,7 @@ func TestCreateURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			url := "/"
 			request := httptest.NewRequest(tt.method, url, bytes.NewReader([]byte(tt.originalURL)))
-			result, err := app.Test(request, 1)
+			result, err := app.Test(request, 100)
 			require.NoError(t, err)
 			resultBody, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
@@ -212,6 +235,21 @@ func TestCreateURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkCreateURL(b *testing.B) {
+	app, _, _ := newAppInstance()
+
+	b.Run("create url", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			originalURL, err := uuid.NewRandom()
+			require.NoError(b, err)
+			request := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte(originalURL.String())))
+			result, err := app.Test(request, 100)
+			require.NoError(b, err)
+			result.Body.Close()
+		}
+	})
 }
 
 func TestApiCreateURL(t *testing.T) {
@@ -272,7 +310,7 @@ func TestApiCreateURL(t *testing.T) {
 			request := httptest.NewRequest(tt.method, url, bytes.NewReader(body))
 			request.Header.Set("Content-Type", tt.want.contentType)
 
-			result, err := app.Test(request, 1)
+			result, err := app.Test(request, 100)
 			require.NoError(t, err)
 
 			var resultBody APICreateURLResult
@@ -291,6 +329,24 @@ func TestApiCreateURL(t *testing.T) {
 	}
 }
 
+func BenchmarkApiCreateURL(b *testing.B) {
+	app, _, _ := newAppInstance()
+
+	b.Run("create url", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			originalURL, err := uuid.NewRandom()
+			require.NoError(b, err)
+			body, _ := json.Marshal(APICreateURLBody{
+				URL: originalURL.String(),
+			})
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+			result, err := app.Test(request, 100)
+			require.NoError(b, err)
+			result.Body.Close()
+		}
+	})
+}
+
 func TestApiCreateURLBatch(t *testing.T) {
 	app, _, _ := newAppInstance()
 
@@ -307,8 +363,7 @@ func TestApiCreateURLBatch(t *testing.T) {
 	}{
 		{
 			name: "Batch URL created",
-			body: `[
-				{
+			body: `[{
 					"original_url": "http://yandex.ru/123123",
 					"correlation_id": "1"
 				},
@@ -319,8 +374,7 @@ func TestApiCreateURLBatch(t *testing.T) {
 					{
 					"original_url": "http://ya.ru/123000000",
 					"correlation_id": "3"
-				}
-			]`,
+				}]`,
 			want: want{
 				contentType:      "application/json",
 				code:             http.StatusCreated,
@@ -337,10 +391,7 @@ func TestApiCreateURLBatch(t *testing.T) {
 					{
 					"original_url": "http://vk.com/123",
 					"correlation_id": "2"
-				},
-					{
-					"
-			]`,
+				},]`,
 			want: want{
 				contentType:      "application/json",
 				code:             http.StatusBadRequest,
@@ -374,7 +425,7 @@ func TestApiCreateURLBatch(t *testing.T) {
 
 			request.Header.Set("Content-Type", tt.want.contentType)
 
-			result, err := app.Test(request, 1)
+			result, err := app.Test(request, 100)
 			require.NoError(t, err)
 
 			var resultBody []service.BatchResultURL

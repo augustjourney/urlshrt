@@ -1,14 +1,19 @@
+// модуль отвечает за сохранение данных о ссылках в оперативной памяти.
 package inmemory
 
 import (
 	"context"
+
 	"github.com/augustjourney/urlshrt/internal/storage"
 )
 
+// репозиторий с методами хранилища
 type Repo struct{}
 
+// слайс для хранения ссылок в памяти
 var UrlsInMemory []storage.URL
 
+// сохраняет ссылку в хранилище
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 	foundURL, err := r.GetByOriginal(ctx, url.Original)
 	if err != nil {
@@ -21,11 +26,13 @@ func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 	return nil
 }
 
+// сохраняет множество ссылок в хранилище
 func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	UrlsInMemory = append(UrlsInMemory, urls...)
 	return nil
 }
 
+// получает экземпляр ссылки по короткой
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	var url storage.URL
 	for i := 0; i < len(UrlsInMemory); i++ {
@@ -38,6 +45,7 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	return &url, nil
 }
 
+// получает ссылки пользователя
 func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
 	var urls []storage.URL
 
@@ -50,6 +58,7 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 	return &urls, nil
 }
 
+// удаляет ссылку
 func (r *Repo) Delete(ctx context.Context, shortURLs []string, userUUID string) error {
 
 	shortUrlsMap := make(map[string]bool)
@@ -72,6 +81,7 @@ func (r *Repo) Delete(ctx context.Context, shortURLs []string, userUUID string) 
 	return nil
 }
 
+// получает экземпляр ссылки по оригинальной
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
 	var url storage.URL
 	for i := 0; i < len(UrlsInMemory); i++ {
@@ -84,7 +94,8 @@ func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL
 	return &url, nil
 }
 
+// создает новый экземпляр inmemory-репозитория
 func New() *Repo {
-	UrlsInMemory = make([]storage.URL, 0)
+	UrlsInMemory = make([]storage.URL, 100000)
 	return &Repo{}
 }

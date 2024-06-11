@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// Конфиг — хранит в себе настройки приложения
 type Config struct {
 	BaseURL         string `env:"BASE_URL"`
 	ServerAddress   string `env:"SERVER_ADDRESS"`
@@ -14,6 +15,7 @@ type Config struct {
 
 var config Config
 
+// Создает экземпляр конфига
 func New() *Config {
 	if config.BaseURL != "" {
 		return &config

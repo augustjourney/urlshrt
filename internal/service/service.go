@@ -1,3 +1,4 @@
+// модуль отвечает за ключевую логику создания, получения и удаления ссылок.
 package service
 
 import (
@@ -13,15 +14,22 @@ import (
 	"github.com/google/uuid"
 )
 
+// Ошибка если ссылка не найдена
 var ErrNotFound = errors.New("url not found")
+
+// Ошибка если ссылка удалена
 var ErrIsDeleted = errors.New("url is deleted")
+
+// Ошибка если произошла какая-то внутренняя ошибка
 var ErrInternalError = errors.New("internal error")
 
+// сервис с методами по работе с ссылками
 type Service struct {
 	repo   storage.IRepo
 	config *config.Config
 }
 
+// Интерфейс — который описывает методы сервиса
 type IService interface {
 	Shorten(originalURL string, userUUID string) (*ShortenResult, error)
 	FindOriginal(short string) (string, error)
@@ -31,26 +39,31 @@ type IService interface {
 	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
 }
 
+// Результат сокращения ссылки
 type ShortenResult struct {
 	ResultURL     string
 	AlreadyExists bool
 }
 
+// Структура ссылки при создании множества ссылок
 type BatchURL struct {
 	OriginalURL   string `json:"original_url"`
 	CorrelationID string `json:"correlation_id"`
 }
 
+// Результат сокращения множества ссылок
 type BatchResultURL struct {
 	ShortURL      string `json:"short_url"`
 	CorrelationID string `json:"correlation_id"`
 }
 
+// Результат получения сокращенных ссылок конкретного пользователя
 type UserURLResult struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
 
+// генерирует случайный ID в формате строки UUID v4
 func (s *Service) GenerateID() (string, error) {
 	uuid, err := uuid.NewRandom()
 
@@ -72,6 +85,7 @@ func (s *Service) buildShortURL(short string) string {
 	return s.config.BaseURL + "/" + short
 }
 
+// сокращает оригинальную ссылку в короткую
 func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, error) {
 	short := s.hashURL(originalURL)
 	uuid, err := s.GenerateID()
@@ -114,6 +128,7 @@ func (s *Service) Shorten(originalURL string, userUUID string) (*ShortenResult, 
 	return &result, nil
 }
 
+// сокращает массив оригинальных ссылок в короткие
 func (s *Service) ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchResultURL, error) {
 	var urls []storage.URL
 	var result []BatchResultURL
@@ -158,6 +173,7 @@ func (s *Service) ShortenBatch(batchURLs []BatchURL, userUUID string) ([]BatchRe
 	return result, nil
 }
 
+// находит оригинальную ссылку по короткому адресу
 func (s *Service) FindOriginal(short string) (string, error) {
 	url, err := s.repo.Get(context.TODO(), short)
 	if err != nil {
@@ -172,6 +188,7 @@ func (s *Service) FindOriginal(short string) (string, error) {
 	return url.Original, nil
 }
 
+// удаляет массив ссылок
 func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID string) error {
 
 	err := s.repo.Delete(ctx, shortURLs, userID)
@@ -183,6 +200,7 @@ func (s *Service) DeleteBatch(ctx context.Context, shortURLs []string, userID st
 	return nil
 }
 
+// получает ссылки для конкретного пользователя
 func (s *Service) GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error) {
 	urls, err := s.repo.GetByUserUUID(ctx, userUUID)
 	if err != nil {
@@ -200,6 +218,7 @@ func (s *Service) GetUserURLs(ctx context.Context, userUUID string) ([]UserURLRe
 	return result, nil
 }
 
+// создает новый экземпляр модуля
 func New(repo storage.IRepo, config *config.Config) Service {
 	return Service{
 		repo:   repo,

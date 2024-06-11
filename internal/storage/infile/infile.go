@@ -1,3 +1,4 @@
+// модуль отвечает за сохранение данных о ссылках в файле.
 package infile
 
 import (
@@ -12,23 +13,12 @@ import (
 	"github.com/augustjourney/urlshrt/internal/storage"
 )
 
+// репозиторий с методами хранилища
 type Repo struct {
 	fileStoragePath string
 }
 
-/*
-Логику добавления URL сделал такой:
-- Создаем URL struct
-- Получаем все текущие URLs с типом []storage.URL
-- И в этот слайс добавляем новый урл
-- И этот слайс перезаписываем в json
-
-Мне кажется, это не совсем правильная логика.
-Правильнее было бы добавлять один url в конец файла.
-Но тогда json будет невалидный или я не понял, как это сделать.
-Тогда самому нужно проверять запятые и конец файла.
-Пока не разобрался с этим.
-*/
+// сохраняет ссылку в файл
 func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 
 	foundURL, err := r.GetByOriginal(ctx, url.Original)
@@ -65,6 +55,7 @@ func (r *Repo) Create(ctx context.Context, url storage.URL) error {
 	return nil
 }
 
+// сохраняет множество ссылок в файл
 func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 
 	currentURLs, err := r.GetAll(ctx)
@@ -93,6 +84,7 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	return nil
 }
 
+// получает все сохраненные ссылки
 func (r *Repo) GetAll(ctx context.Context) ([]storage.URL, error) {
 	file, err := os.OpenFile(r.fileStoragePath, os.O_RDONLY|os.O_CREATE, 0666)
 	var urls []storage.URL
@@ -122,6 +114,7 @@ func (r *Repo) GetAll(ctx context.Context) ([]storage.URL, error) {
 	return urls, nil
 }
 
+// получает ссылки конкретного пользователя
 func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
 	var urls []storage.URL
 
@@ -142,6 +135,7 @@ func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.U
 	return &urls, nil
 }
 
+// удаляет ссылку
 func (r *Repo) Delete(ctx context.Context, shortURLs []string, userUUID string) error {
 
 	allURLs, err := r.GetAll(ctx)
@@ -185,6 +179,7 @@ func (r *Repo) Delete(ctx context.Context, shortURLs []string, userUUID string) 
 	return nil
 }
 
+// получает экземпляр ссылки по короткой
 func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 
 	var url storage.URL
@@ -205,6 +200,7 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	return &url, nil
 }
 
+// получает экземпляр ссылки по оригинальной
 func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL, error) {
 
 	var url storage.URL
@@ -225,6 +221,7 @@ func (r *Repo) GetByOriginal(ctx context.Context, original string) (*storage.URL
 	return &url, nil
 }
 
+// создает новый экземпляр infile-репозитория
 func New(config *config.Config) *Repo {
 	repo := Repo{
 		fileStoragePath: config.FileStoragePath,

@@ -1,3 +1,4 @@
+// модуль controller отвечает за принятие http-запросов к сервису.
 package controller
 
 import (
@@ -12,23 +13,28 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Структура контроллера с методами, которые обрабатывают http-запросы
 type Controller struct {
 	service service.IService
 }
 
+// Структура body по сокращению ссылок в api-запросе
 type APICreateURLBody struct {
 	URL string `json:"url"`
 }
 
+// Резлуьтат по сокращению ссылок в api-запросе
 type APICreateURLResult struct {
 	Result string `json:"result"`
 }
 
+// Обрабатывает http-запрос на отсутствующий адрес
 func (c *Controller) BadRequest(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "text/plain")
 	return ctx.SendStatus(http.StatusBadRequest)
 }
 
+// Обрабатывает http-запрос на сокращение одной ссылки
 func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "text/plain")
 	if ctx.Method() != http.MethodPost {
@@ -61,6 +67,7 @@ func (c *Controller) CreateURL(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusCreated).SendString(result.ResultURL)
 }
 
+// Обрабатывает http-запрос на создание множества ссылок
 func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "application/json")
 
@@ -105,6 +112,7 @@ func (c *Controller) APICreateURLBatch(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusCreated).Send(response)
 }
 
+// Обрабатывает http-запрос на удаление множества ссылок
 func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 	if ctx.Method() != http.MethodDelete {
 		return ctx.SendStatus(http.StatusMethodNotAllowed)
@@ -142,6 +150,7 @@ func (c *Controller) APIDeleteBatch(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(http.StatusAccepted)
 }
 
+// Обрабатывает http-запрос на создание ссылки по api-адресу
 func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "application/json")
 
@@ -188,6 +197,7 @@ func (c *Controller) APICreateURL(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusCreated).Send(response)
 }
 
+// Обрабатывает http-запрос на получение полной ссылке по сокращенной
 func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 
 	ctx.Set("Content-type", "text/plain")
@@ -222,6 +232,7 @@ func (c *Controller) GetURL(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusTemporaryRedirect).SendString(originalURL)
 }
 
+// Обрабатывает http-запрос на получение сокращенных ссылок пользователя
 func (c *Controller) GetUserURLs(ctx *fiber.Ctx) error {
 	ctx.Set("Content-type", "application/json")
 
@@ -285,6 +296,7 @@ func (c *Controller) checkAuth(ctx *fiber.Ctx, createIfEmpty bool) (string, erro
 	return user, nil
 }
 
+// Создает новый экземпляр контроллера
 func New(service service.IService) Controller {
 	return Controller{
 		service: service,
