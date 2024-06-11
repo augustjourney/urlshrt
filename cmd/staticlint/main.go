@@ -7,6 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/shadow"
 	"golang.org/x/tools/go/analysis/passes/structtag"
 	"honnef.co/go/tools/staticcheck"
+	"staticlint/osexit"
 	"strings"
 )
 
@@ -35,6 +36,9 @@ func main() {
 
 	// добавляем дефолтные анализаторы из модуля passes
 	checks = append(checks, printf.Analyzer, shadow.Analyzer, structtag.Analyzer)
+
+	// добавляем кастомный анализатор для os.exit
+	checks = append(checks, osexit.OsExitChecker)
 
 	// запускаем мультичекер
 	multichecker.Main(checks...)
