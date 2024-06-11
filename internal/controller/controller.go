@@ -278,18 +278,19 @@ func (c *Controller) checkAuth(ctx *fiber.Ctx, createIfEmpty bool) (string, erro
 	}
 
 	if createIfEmpty && user == "" {
-		newUserID, err := c.service.GenerateID()
+		var err error
+		user, err = c.service.GenerateID()
 		if err != nil {
 			return "", err
 		}
 
 		cookie := new(fiber.Cookie)
 		cookie.Name = "user"
-		cookie.Value = newUserID
+		cookie.Value = user
 
 		ctx.Cookie(cookie)
 
-		ctx.Set("Authorization", newUserID)
+		ctx.Set("Authorization", user)
 		return user, nil
 	}
 
