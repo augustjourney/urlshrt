@@ -1,3 +1,4 @@
+// модуль с анализатором, который проверяет на наличие os.Exit в main файле
 package osexit
 
 import (
@@ -5,6 +6,8 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// os exit checker проверяет наличие os.Exit в main.go
+// если находит, то выдаст ошибку: should not use os.Exit in main
 var OsExitChecker = &analysis.Analyzer{
 	Name: "osexitchecker",
 	Doc:  "check for os exit",

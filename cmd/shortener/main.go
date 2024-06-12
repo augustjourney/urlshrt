@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
@@ -33,6 +34,7 @@ func main() {
 	if err != nil {
 		logger.Log.Error("Could not connect to postgres, using in-file storage")
 		repo = infile.New(config)
+		os.Exit(1)
 	}
 	service := service.New(repo, config)
 	controller := controller.New(&service)
