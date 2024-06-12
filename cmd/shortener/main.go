@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/controller"
@@ -16,10 +14,20 @@ import (
 	"github.com/augustjourney/urlshrt/internal/storage/postgres"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
 
 	config := config.New()
 	logger.New()
+
+	logger.Log.Printf("Build version: %v\n", buildVersion)
+	logger.Log.Printf("Build date: %v\n", buildDate)
+	logger.Log.Printf("Build commit: %v\n", buildCommit)
 
 	db, err := infra.InitPostgres(config)
 	if err != nil {
@@ -34,7 +42,6 @@ func main() {
 	if err != nil {
 		logger.Log.Error("Could not connect to postgres, using in-file storage")
 		repo = infile.New(config)
-		os.Exit(1)
 	}
 	service := service.New(repo, config)
 	controller := controller.New(&service)
