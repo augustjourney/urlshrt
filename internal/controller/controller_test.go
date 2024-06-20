@@ -481,10 +481,10 @@ func TestApiDeleteBatch(t *testing.T) {
 	userID := "user-123"
 
 	urlsToStore, err := urlsService.ShortenBatch(batch2, userID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	urlsToDelete, err := urlsService.ShortenBatch(batch1, userID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Сейчас созданы все необходимые урлы
 	// Можно тестировать, удалять и смотреть на результаты
@@ -518,8 +518,8 @@ func TestApiDeleteBatch(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, url.ShortURL, nil)
 
 		require.NoError(t, err)
-		res, err := app.Test(request, 500)
-		require.NoError(t, err)
+		res, urlErr := app.Test(request, 500)
+		require.NoError(t, urlErr)
 		require.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
 		res.Body.Close()
 	}
