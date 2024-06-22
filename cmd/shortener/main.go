@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
 	"github.com/augustjourney/urlshrt/internal/controller"
@@ -45,11 +45,18 @@ func main() {
 	}
 	service := service.New(repo, config)
 	controller := controller.New(&service)
-	app := app.New(&controller, db)
+	server := app.New(&controller, db)
 
-	logger.Log.Info(fmt.Sprintf("Launching on %s", config.ServerAddress))
+	if config.EnableHTTPS {
+		err = app.RunHTTPS(server, config)
+		// Если происходит ошибка — просто логируем ее
+		// И запускаем на http
+		if err != nil {
+			logger.Log.Fatal(err)
+		}
+	}
 
-	err = app.Listen(config.ServerAddress)
+	err = app.RunHTTP(server, config)
 	if err != nil {
 		panic(err)
 	}
