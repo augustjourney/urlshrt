@@ -60,25 +60,29 @@ func (c *Config) generateCerts() error {
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
 
-	file, err := os.Create(c.CertPemPath)
+	pemFile, err := os.Create(c.CertPemPath)
 	if err != nil {
 		logger.Log.Fatal(err)
 		return err
 	}
 
-	_, err = file.Write(certPEM.Bytes())
+	defer pemFile.Close()
+
+	_, err = pemFile.Write(certPEM.Bytes())
 	if err != nil {
 		logger.Log.Fatal(err)
 		return err
 	}
 
-	file, err = os.Create(c.CertKeyPath)
+	keyFile, err := os.Create(c.CertKeyPath)
 	if err != nil {
 		logger.Log.Fatal(err)
 		return err
 	}
 
-	_, err = file.Write(privateKeyPEM.Bytes())
+	defer keyFile.Close()
+
+	_, err = keyFile.Write(privateKeyPEM.Bytes())
 	if err != nil {
 		logger.Log.Fatal(err)
 		return err
