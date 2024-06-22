@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"os"
+	"strconv"
 )
 
 // Конфиг — хранит в себе настройки приложения
@@ -11,6 +12,7 @@ type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	EnableHTTPS     bool   `env:"ENABLE_HTTPS"`
 }
 
 var config Config
@@ -32,6 +34,7 @@ func New() *Config {
 		flagBaseURL       = flag.String("b", defaults["baseURL"], "Base URL which short urls will be accessible")
 		fileStoragePath   = flag.String("f", defaults["fileStoragePath"], "Path to file where urls data will be stored")
 		flagDatabaseDSN   = flag.String("d", "", "Database DSN")
+		flagEnableHTTPS   = flag.Bool("s", false, "Enable HTTPS")
 	)
 
 	flag.Parse()
@@ -41,6 +44,7 @@ func New() *Config {
 		BaseURL:         *flagBaseURL,
 		FileStoragePath: *fileStoragePath,
 		DatabaseDSN:     *flagDatabaseDSN,
+		EnableHTTPS:     *flagEnableHTTPS,
 	}
 
 	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {
@@ -57,6 +61,17 @@ func New() *Config {
 
 	if databaseDSN := os.Getenv("DATABASE_DSN"); databaseDSN != "" {
 		config.DatabaseDSN = databaseDSN
+	}
+
+	if databaseDSN := os.Getenv("DATABASE_DSN"); databaseDSN != "" {
+		config.DatabaseDSN = databaseDSN
+	}
+
+	if enableHTTPS := os.Getenv("ENABLE_HTTPS"); enableHTTPS != "" {
+		enableHTTPS, err := strconv.ParseBool(os.Getenv("ENABLE_HTTPS"))
+		if err == nil && enableHTTPS {
+			config.EnableHTTPS = enableHTTPS
+		}
 	}
 
 	return &config
