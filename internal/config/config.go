@@ -13,6 +13,8 @@ type Config struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
 	EnableHTTPS     bool   `env:"ENABLE_HTTPS"`
+	CertPemPath     string
+	CertKeyPath     string
 }
 
 var config Config
@@ -27,6 +29,8 @@ func New() *Config {
 		"baseURL":         "http://localhost:8080",
 		"serverAddress":   "localhost:8080",
 		"fileStoragePath": "/tmp/short-url-db.json",
+		"certPemPath":     "certs/cert.pem",
+		"certKeyPath":     "certs/cert.key",
 	}
 
 	var (
@@ -45,6 +49,8 @@ func New() *Config {
 		FileStoragePath: *fileStoragePath,
 		DatabaseDSN:     *flagDatabaseDSN,
 		EnableHTTPS:     *flagEnableHTTPS,
+		CertPemPath:     defaults["certPemPath"],
+		CertKeyPath:     defaults["certKeyPath"],
 	}
 
 	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {
