@@ -23,7 +23,7 @@ type Config struct {
 
 var config Config
 
-func parseJsonConfig(pathToConfigFile string, config *Config) {
+func parseJSONConfig(pathToConfigFile string, config *Config) {
 	configFile, err := os.ReadFile(pathToConfigFile)
 	if err != nil {
 		logger.Log.Error(err.Error())
@@ -73,7 +73,7 @@ func New() *Config {
 
 	// Если указан путь до конфиг-файла из json, парсим его
 	if *flagConfig != "" {
-		parseJsonConfig(*flagConfig, &config)
+		parseJSONConfig(*flagConfig, &config)
 	}
 
 	// Берем переменные из флагов, если они есть
