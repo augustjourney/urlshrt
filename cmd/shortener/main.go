@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
@@ -43,21 +46,42 @@ func main() {
 		logger.Log.Error("Could not connect to postgres, using in-file storage")
 		repo = infile.New(config)
 	}
+
 	service := service.New(repo, config)
 	controller := controller.New(&service)
 	server := app.New(&controller, db)
 
-	if config.EnableHTTPS {
-		err = app.RunHTTPS(server, config)
-		// Если происходит ошибка — просто логируем ее
-		// И запускаем на http
-		if err != nil {
-			logger.Log.Fatal(err)
+	go func() {
+		if config.EnableHTTPS {
+			err = app.RunHTTPS(server, config)
+			// Если происходит ошибка — просто логируем ее
+			// И запускаем на http
+			if err != nil {
+				logger.Log.Fatal(err)
+			}
 		}
-	}
 
-	err = app.RunHTTP(server, config)
-	if err != nil {
-		panic(err)
-	}
+		err = app.RunHTTP(server, config)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	ch := make(chan os.Signal, 1)
+
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(ch, os.Interrupt, syscall.SIGINT)
+	signal.Notify(ch, os.Interrupt, syscall.SIGQUIT)
+
+	<-ch
+
+	logger.Log.Info("Gracefully shutting down...")
+
+	server.Shutdown()
+
+	logger.Log.Info("Closing connections...")
+
+	db.Close()
+
+	logger.Log.Info("Server was shutdown successfully")
 }
