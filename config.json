@@ -1,0 +1,7 @@
+{
+    "server_address": "localhost:5050",
+    "base_url": "https://localhost:5050",
+    "enable_https": true,
+    "database_dsn": "postgresql://localhost:5432@postgres/urlshrt",
+    "file_storage_path": "/tmp/short-url-db.json"
+}
