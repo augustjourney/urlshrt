@@ -24,3 +24,7 @@ vendor/
 .env
 
 shortener
+
+# Certs files
+cert.pem
+cert.key
