@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/augustjourney/urlshrt/internal/app"
 	"github.com/augustjourney/urlshrt/internal/config"
@@ -69,15 +70,13 @@ func main() {
 
 	ch := make(chan os.Signal, 1)
 
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	signal.Notify(ch, os.Interrupt, syscall.SIGINT)
-	signal.Notify(ch, os.Interrupt, syscall.SIGQUIT)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	<-ch
 
 	logger.Log.Info("Gracefully shutting down...")
 
-	server.Shutdown()
+	server.ShutdownWithTimeout(10 * time.Second)
 
 	logger.Log.Info("Closing connections...")
 
