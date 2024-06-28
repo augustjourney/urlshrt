@@ -133,7 +133,7 @@ func TestGetURL(t *testing.T) {
 			url := "/" + tt.shortURL
 			req, err := http.NewRequest(tt.method, url, nil)
 			require.NoError(t, err)
-			res, err := app.Test(req, 1)
+			res, err := app.Test(req, 10)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			res.Body.Close()
