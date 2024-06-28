@@ -19,6 +19,7 @@ type Controller interface {
 	APICreateURLBatch(ctx *fiber.Ctx) error
 	GetUserURLs(ctx *fiber.Ctx) error
 	APIDeleteBatch(ctx *fiber.Ctx) error
+	GetStats(ctx *fiber.Ctx) error
 }
 
 // Создает новый экземпляр приложения
@@ -42,6 +43,7 @@ func New(c Controller, db *sql.DB) *fiber.App {
 	app.Get("/:short", c.GetURL)
 	app.Get("/api/user/urls", c.GetUserURLs)
 	app.Delete("/api/user/urls", c.APIDeleteBatch)
+	app.Get("/api/internal/stats", c.GetStats)
 	app.Use("/*", c.BadRequest)
 
 	return app
