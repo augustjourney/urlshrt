@@ -45,6 +45,11 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 	return &url, nil
 }
 
+// получает внутренню статистику: количество сохранненых ссылок и количество пользователей
+func (r *Repo) GetStats(ctx context.Context) (storage.Stats, error) {
+	return storage.Stats{}, nil
+}
+
 // получает ссылки пользователя
 func (r *Repo) GetByUserUUID(ctx context.Context, userUUID string) (*[]storage.URL, error) {
 	var urls []storage.URL
