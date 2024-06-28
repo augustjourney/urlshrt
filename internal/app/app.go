@@ -43,7 +43,7 @@ func New(c Controller, db *sql.DB) *fiber.App {
 	app.Get("/:short", c.GetURL)
 	app.Get("/api/user/urls", c.GetUserURLs)
 	app.Delete("/api/user/urls", c.APIDeleteBatch)
-	app.Get("/api/internal/stats", c.GetStats)
+	app.Get("/api/internal/stats", middleware.IPInTrustedSubnet, c.GetStats)
 	app.Use("/*", c.BadRequest)
 
 	return app
