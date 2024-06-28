@@ -22,7 +22,7 @@ type Config struct {
 	TrustedSubnet   string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
-var config Config
+var config *Config
 
 func parseJSONConfig(pathToConfigFile string, config *Config) {
 	configFile, err := os.ReadFile(pathToConfigFile)
@@ -39,8 +39,8 @@ func parseJSONConfig(pathToConfigFile string, config *Config) {
 
 // Создает экземпляр конфига
 func New() *Config {
-	if config.BaseURL != "" {
-		return &config
+	if config != nil {
+		return config
 	}
 
 	defaults := map[string]string{
@@ -64,7 +64,7 @@ func New() *Config {
 	flag.Parse()
 
 	// Инициализация конфига с дефолтными значениями
-	config = Config{
+	config = &Config{
 		CertPemPath:     defaults["certPemPath"],
 		CertKeyPath:     defaults["certKeyPath"],
 		Config:          *flagConfig,
@@ -75,7 +75,7 @@ func New() *Config {
 
 	// Если указан путь до конфиг-файла из json, парсим его
 	if *flagConfig != "" {
-		parseJSONConfig(*flagConfig, &config)
+		parseJSONConfig(*flagConfig, config)
 	}
 
 	// Берем переменные из флагов, если они есть
@@ -135,5 +135,5 @@ func New() *Config {
 		}
 	}
 
-	return &config
+	return config
 }
