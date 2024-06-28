@@ -19,6 +19,10 @@ func IPInTrustedSubnet(ctx *fiber.Ctx) error {
 
 	cfg := config.New()
 
+	if cfg.TrustedSubnet == "" {
+		return ctx.SendStatus(http.StatusForbidden)
+	}
+
 	_, subnet, err := net.ParseCIDR(cfg.TrustedSubnet)
 	if err != nil {
 		logger.Log.Error("could not parse cidr in IPInTrustedSubnet", err.Error())
