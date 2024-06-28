@@ -19,6 +19,7 @@ type Config struct {
 	CertPemPath     string `json:"-"`
 	CertKeyPath     string `json:"-"`
 	Config          string `env:"CONFIG" json:"-"`
+	TrustedSubnet   string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 var config Config
@@ -57,6 +58,7 @@ func New() *Config {
 		flagDatabaseDSN     = flag.String("d", "", "Database DSN")
 		flagEnableHTTPS     = flag.Bool("s", false, "Enable HTTPS")
 		flagConfig          = flag.String("c", "", "Config in JSON")
+		flagTrustedSubnet   = flag.String("t", "", "Trusted subnet")
 	)
 
 	flag.Parse()
@@ -97,6 +99,10 @@ func New() *Config {
 		config.EnableHTTPS = *flagEnableHTTPS
 	}
 
+	if *flagTrustedSubnet != "" {
+		config.TrustedSubnet = *flagTrustedSubnet
+	}
+
 	// Берем переменные из окружения
 	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {
 		config.ServerAddress = serverAddress
@@ -116,6 +122,10 @@ func New() *Config {
 
 	if databaseDSN := os.Getenv("DATABASE_DSN"); databaseDSN != "" {
 		config.DatabaseDSN = databaseDSN
+	}
+
+	if trustedSubnet := os.Getenv("TRUSTED_SUBNET"); trustedSubnet != "" {
+		config.TrustedSubnet = trustedSubnet
 	}
 
 	if enableHTTPS := os.Getenv("ENABLE_HTTPS"); enableHTTPS != "" {
