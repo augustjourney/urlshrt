@@ -181,7 +181,23 @@ func (r *Repo) Delete(ctx context.Context, shortURLs []string, userUUID string) 
 
 // получает внутренню статистику: количество сохранненых ссылок и количество пользователей
 func (r *Repo) GetStats(ctx context.Context) (storage.Stats, error) {
-	return storage.Stats{}, nil
+	result := storage.Stats{}
+	allURLs, err := r.GetAll(ctx)
+
+	if err != nil {
+		return result, nil
+	}
+
+	users := make(map[string]bool)
+
+	for i := 0; i < len(allURLs); i++ {
+		users[allURLs[i].UserUUID] = true
+	}
+
+	result.UrlsCount = len(allURLs)
+	result.UsersCount = len(users)
+
+	return result, nil
 }
 
 // получает экземпляр ссылки по короткой
