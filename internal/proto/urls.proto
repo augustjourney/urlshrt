@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "./";
+
+message CreateURLRequest {
+  string original_url = 1;
+  string user_id = 2;
+}
+
+message CreateURLResponse {
+  string short_url = 1;
+}
+
+message GetURLRequest {
+  string short_url = 1;
+}
+
+message GetURLResponse {
+  string original_url = 1;
+}
+
+service URL {
+    rpc CreateURL(CreateURLRequest) returns (CreateURLResponse);
+    rpc GetURL(GetURLRequest) returns (GetURLResponse);
+}
