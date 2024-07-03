@@ -19,128 +19,280 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	URL_CreateURL_FullMethodName = "/URL/CreateURL"
-	URL_GetURL_FullMethodName    = "/URL/GetURL"
+	URLService_Create_FullMethodName      = "/URLService/Create"
+	URLService_Get_FullMethodName         = "/URLService/Get"
+	URLService_CreateBatch_FullMethodName = "/URLService/CreateBatch"
+	URLService_GetUserURLs_FullMethodName = "/URLService/GetUserURLs"
+	URLService_DeleteBatch_FullMethodName = "/URLService/DeleteBatch"
+	URLService_GetStats_FullMethodName    = "/URLService/GetStats"
 )
 
-// URLClient is the client API for URL service.
+// URLServiceClient is the client API for URLService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type URLClient interface {
-	CreateURL(ctx context.Context, in *CreateURLRequest, opts ...grpc.CallOption) (*CreateURLResponse, error)
-	GetURL(ctx context.Context, in *GetURLRequest, opts ...grpc.CallOption) (*GetURLResponse, error)
+type URLServiceClient interface {
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	CreateBatch(ctx context.Context, in *CreateBatchRequest, opts ...grpc.CallOption) (*CreateBatchResponse, error)
+	GetUserURLs(ctx context.Context, in *GetUserURLsRequest, opts ...grpc.CallOption) (*GetUserURLsResponse, error)
+	DeleteBatch(ctx context.Context, in *DeleteBatchRequest, opts ...grpc.CallOption) (*DeleteBatchResponse, error)
+	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
 }
 
-type uRLClient struct {
+type uRLServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewURLClient(cc grpc.ClientConnInterface) URLClient {
-	return &uRLClient{cc}
+func NewURLServiceClient(cc grpc.ClientConnInterface) URLServiceClient {
+	return &uRLServiceClient{cc}
 }
 
-func (c *uRLClient) CreateURL(ctx context.Context, in *CreateURLRequest, opts ...grpc.CallOption) (*CreateURLResponse, error) {
+func (c *uRLServiceClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateURLResponse)
-	err := c.cc.Invoke(ctx, URL_CreateURL_FullMethodName, in, out, cOpts...)
+	out := new(CreateResponse)
+	err := c.cc.Invoke(ctx, URLService_Create_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uRLClient) GetURL(ctx context.Context, in *GetURLRequest, opts ...grpc.CallOption) (*GetURLResponse, error) {
+func (c *uRLServiceClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetURLResponse)
-	err := c.cc.Invoke(ctx, URL_GetURL_FullMethodName, in, out, cOpts...)
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, URLService_Get_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// URLServer is the server API for URL service.
-// All implementations must embed UnimplementedURLServer
+func (c *uRLServiceClient) CreateBatch(ctx context.Context, in *CreateBatchRequest, opts ...grpc.CallOption) (*CreateBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateBatchResponse)
+	err := c.cc.Invoke(ctx, URLService_CreateBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) GetUserURLs(ctx context.Context, in *GetUserURLsRequest, opts ...grpc.CallOption) (*GetUserURLsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserURLsResponse)
+	err := c.cc.Invoke(ctx, URLService_GetUserURLs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) DeleteBatch(ctx context.Context, in *DeleteBatchRequest, opts ...grpc.CallOption) (*DeleteBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteBatchResponse)
+	err := c.cc.Invoke(ctx, URLService_DeleteBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStatsResponse)
+	err := c.cc.Invoke(ctx, URLService_GetStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// URLServiceServer is the server API for URLService service.
+// All implementations must embed UnimplementedURLServiceServer
 // for forward compatibility
-type URLServer interface {
-	CreateURL(context.Context, *CreateURLRequest) (*CreateURLResponse, error)
-	GetURL(context.Context, *GetURLRequest) (*GetURLResponse, error)
-	mustEmbedUnimplementedURLServer()
+type URLServiceServer interface {
+	Create(context.Context, *CreateRequest) (*CreateResponse, error)
+	Get(context.Context, *GetRequest) (*GetResponse, error)
+	CreateBatch(context.Context, *CreateBatchRequest) (*CreateBatchResponse, error)
+	GetUserURLs(context.Context, *GetUserURLsRequest) (*GetUserURLsResponse, error)
+	DeleteBatch(context.Context, *DeleteBatchRequest) (*DeleteBatchResponse, error)
+	GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
+	mustEmbedUnimplementedURLServiceServer()
 }
 
-// UnimplementedURLServer must be embedded to have forward compatible implementations.
-type UnimplementedURLServer struct {
+// UnimplementedURLServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedURLServiceServer struct {
 }
 
-func (UnimplementedURLServer) CreateURL(context.Context, *CreateURLRequest) (*CreateURLResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateURL not implemented")
+func (UnimplementedURLServiceServer) Create(context.Context, *CreateRequest) (*CreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedURLServer) GetURL(context.Context, *GetURLRequest) (*GetURLResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetURL not implemented")
+func (UnimplementedURLServiceServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedURLServer) mustEmbedUnimplementedURLServer() {}
+func (UnimplementedURLServiceServer) CreateBatch(context.Context, *CreateBatchRequest) (*CreateBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateBatch not implemented")
+}
+func (UnimplementedURLServiceServer) GetUserURLs(context.Context, *GetUserURLsRequest) (*GetUserURLsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserURLs not implemented")
+}
+func (UnimplementedURLServiceServer) DeleteBatch(context.Context, *DeleteBatchRequest) (*DeleteBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteBatch not implemented")
+}
+func (UnimplementedURLServiceServer) GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStats not implemented")
+}
+func (UnimplementedURLServiceServer) mustEmbedUnimplementedURLServiceServer() {}
 
-// UnsafeURLServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to URLServer will
+// UnsafeURLServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to URLServiceServer will
 // result in compilation errors.
-type UnsafeURLServer interface {
-	mustEmbedUnimplementedURLServer()
+type UnsafeURLServiceServer interface {
+	mustEmbedUnimplementedURLServiceServer()
 }
 
-func RegisterURLServer(s grpc.ServiceRegistrar, srv URLServer) {
-	s.RegisterService(&URL_ServiceDesc, srv)
+func RegisterURLServiceServer(s grpc.ServiceRegistrar, srv URLServiceServer) {
+	s.RegisterService(&URLService_ServiceDesc, srv)
 }
 
-func _URL_CreateURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateURLRequest)
+func _URLService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(URLServer).CreateURL(ctx, in)
+		return srv.(URLServiceServer).Create(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: URL_CreateURL_FullMethodName,
+		FullMethod: URLService_Create_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(URLServer).CreateURL(ctx, req.(*CreateURLRequest))
+		return srv.(URLServiceServer).Create(ctx, req.(*CreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _URL_GetURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetURLRequest)
+func _URLService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(URLServer).GetURL(ctx, in)
+		return srv.(URLServiceServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: URL_GetURL_FullMethodName,
+		FullMethod: URLService_Get_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(URLServer).GetURL(ctx, req.(*GetURLRequest))
+		return srv.(URLServiceServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// URL_ServiceDesc is the grpc.ServiceDesc for URL service.
+func _URLService_CreateBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).CreateBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_CreateBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).CreateBatch(ctx, req.(*CreateBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_GetUserURLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserURLsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).GetUserURLs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_GetUserURLs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).GetUserURLs(ctx, req.(*GetUserURLsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_DeleteBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).DeleteBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_DeleteBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).DeleteBatch(ctx, req.(*DeleteBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).GetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_GetStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).GetStats(ctx, req.(*GetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// URLService_ServiceDesc is the grpc.ServiceDesc for URLService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var URL_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "URL",
-	HandlerType: (*URLServer)(nil),
+var URLService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "URLService",
+	HandlerType: (*URLServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateURL",
-			Handler:    _URL_CreateURL_Handler,
+			MethodName: "Create",
+			Handler:    _URLService_Create_Handler,
 		},
 		{
-			MethodName: "GetURL",
-			Handler:    _URL_GetURL_Handler,
+			MethodName: "Get",
+			Handler:    _URLService_Get_Handler,
+		},
+		{
+			MethodName: "CreateBatch",
+			Handler:    _URLService_CreateBatch_Handler,
+		},
+		{
+			MethodName: "GetUserURLs",
+			Handler:    _URLService_GetUserURLs_Handler,
+		},
+		{
+			MethodName: "DeleteBatch",
+			Handler:    _URLService_DeleteBatch_Handler,
+		},
+		{
+			MethodName: "GetStats",
+			Handler:    _URLService_GetStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -12,12 +12,12 @@ import (
 // Grpc-контроллер
 type GrpcController struct {
 	service service.IService
-	pb.UnimplementedURLServer
+	pb.UnimplementedURLServiceServer
 }
 
 // Получает полную ссылку по короткой через grpc
-func (c *GrpcController) GetURL(ctx context.Context, req *pb.GetURLRequest) (*pb.GetURLResponse, error) {
-	var res pb.GetURLResponse
+func (c *GrpcController) GetURL(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
+	var res pb.GetResponse
 
 	originalURL, err := c.service.FindOriginal(req.ShortUrl)
 	if errors.Is(err, service.ErrIsDeleted) {
@@ -38,8 +38,8 @@ func (c *GrpcController) GetURL(ctx context.Context, req *pb.GetURLRequest) (*pb
 }
 
 // Создает короткую ссылку из оригинальной по grpc
-func (c *GrpcController) CreateURL(ctx context.Context, req *pb.CreateURLRequest) (*pb.CreateURLResponse, error) {
-	var res pb.CreateURLResponse
+func (c *GrpcController) CreateURL(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error) {
+	var res pb.CreateResponse
 
 	if req.OriginalUrl == "" {
 		return &res, status.Errorf(codes.InvalidArgument, "original url is required")
@@ -58,6 +58,8 @@ func (c *GrpcController) CreateURL(ctx context.Context, req *pb.CreateURLRequest
 
 	return &res, nil
 }
+
+func (c *GrpcController) CreateURLBatch() {}
 
 // Создает новый экземпляр grpc-контроллера
 func NewGrpcController(service service.IService) *GrpcController {
