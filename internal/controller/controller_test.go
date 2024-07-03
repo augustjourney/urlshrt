@@ -27,16 +27,16 @@ import (
 )
 
 func newAppInstance() (*fiber.App, storage.IRepo, service.Service) {
-	config := config.New()
+	cfg := config.New()
 	logger.New()
 
 	repo := inmemory.New()
-	service := service.New(repo, config)
-	controller := New(&service)
+	urlService := service.New(repo, cfg)
+	controller := NewHttpController(&urlService)
 
-	app := app.New(&controller, nil)
+	httpApp := app.NewHttpApp(controller, nil)
 
-	return app, repo, service
+	return httpApp, repo, urlService
 }
 
 func TestGetURL(t *testing.T) {

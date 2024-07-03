@@ -313,8 +313,8 @@ func (c *Controller) checkAuth(ctx *fiber.Ctx, createIfEmpty bool) (string, erro
 }
 
 // Создает новый экземпляр контроллера
-func New(service service.IService) Controller {
-	return Controller{
+func NewHttpController(service service.IService) *Controller {
+	return &Controller{
 		service: service,
 	}
 }

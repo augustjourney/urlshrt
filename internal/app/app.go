@@ -3,11 +3,14 @@ package app
 import (
 	"database/sql"
 	"fmt"
-
 	"github.com/augustjourney/urlshrt/internal/config"
+	"github.com/augustjourney/urlshrt/internal/controller"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/middleware"
+	pb "github.com/augustjourney/urlshrt/internal/proto"
 	"github.com/gofiber/fiber/v2"
+	"google.golang.org/grpc"
+	"net"
 )
 
 // Интерфейс — который описывает методы контроллера
@@ -23,7 +26,7 @@ type Controller interface {
 }
 
 // Создает новый экземпляр приложения
-func New(c Controller, db *sql.DB) *fiber.App {
+func NewHttpApp(c Controller, db *sql.DB) *fiber.App {
 	app := fiber.New()
 
 	app.Use(middleware.RequestCompress)
@@ -63,4 +66,23 @@ func RunHTTPS(app *fiber.App, config *config.Config) error {
 	}
 	logger.Log.Info(fmt.Sprintf("Launching on https — %s", config.ServerAddress))
 	return app.ListenTLS(config.ServerAddress, pem, key)
+}
+
+func NewGrpcApp(controller *controller.GrpcController, config *config.Config) *grpc.Server {
+	server := grpc.NewServer()
+	pb.RegisterURLServer(server, controller)
+	return server
+}
+
+// Запускает приложение в gRPC
+func RunGRPC(server *grpc.Server) error {
+
+	listen, err := net.Listen("tcp", ":3200")
+	if err != nil {
+		logger.Log.Error(err)
+	}
+
+	logger.Log.Info("gRPC server started")
+
+	return server.Serve(listen)
 }
