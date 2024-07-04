@@ -54,7 +54,7 @@ func main() {
 	grpcController := controller.NewGrpcController(&urlService)
 
 	httpServer := app.NewHttpApp(httpController, db)
-	grpcServer := app.NewGrpcApp(grpcController, config)
+	grpcServer := app.NewGrpcApp(grpcController)
 
 	go func() {
 		if config.EnableHTTPS {
@@ -73,7 +73,7 @@ func main() {
 	}()
 
 	go func() {
-		err = app.RunGRPC(grpcServer)
+		err = app.RunGRPC(grpcServer, config)
 		if err != nil {
 			panic(err)
 		}

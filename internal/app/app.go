@@ -1,10 +1,10 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/augustjourney/urlshrt/internal/config"
-	"github.com/augustjourney/urlshrt/internal/controller"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/middleware"
 	pb "github.com/augustjourney/urlshrt/internal/proto"
@@ -23,6 +23,16 @@ type Controller interface {
 	GetUserURLs(ctx *fiber.Ctx) error
 	APIDeleteBatch(ctx *fiber.Ctx) error
 	GetStats(ctx *fiber.Ctx) error
+}
+
+type GrpcController interface {
+	Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error)
+	Create(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error)
+	CreateBatch(ctx context.Context, req *pb.CreateBatchRequest) (*pb.CreateBatchResponse, error)
+	GetUserURLs(ctx context.Context, req *pb.GetUserURLsRequest) (*pb.GetUserURLsResponse, error)
+	DeleteBatch(ctx context.Context, req *pb.DeleteBatchRequest) (*pb.DeleteBatchResponse, error)
+	GetStats(ctx context.Context, req *pb.GetStatsRequest) (*pb.GetStatsResponse, error)
+	mustEmbedUnimplementedURLServiceServer()
 }
 
 // Создает новый экземпляр приложения
@@ -68,15 +78,15 @@ func RunHTTPS(app *fiber.App, config *config.Config) error {
 	return app.ListenTLS(config.ServerAddress, pem, key)
 }
 
-func NewGrpcApp(controller *controller.GrpcController, config *config.Config) *grpc.Server {
+func NewGrpcApp(controller pb.URLServiceServer) *grpc.Server {
 	server := grpc.NewServer()
-	pb.RegisterURLServer(server, controller)
+	pb.RegisterURLServiceServer(server, controller)
 	return server
 }
 
 // Запускает приложение в gRPC
-func RunGRPC(server *grpc.Server) error {
-
+func RunGRPC(server *grpc.Server, config *config.Config) error {
+	// TODO: адрес из конфига брать
 	listen, err := net.Listen("tcp", ":3200")
 	if err != nil {
 		logger.Log.Error(err)
