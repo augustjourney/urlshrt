@@ -86,13 +86,12 @@ func NewGrpcApp(controller pb.URLServiceServer) *grpc.Server {
 
 // Запускает приложение в gRPC
 func RunGRPC(server *grpc.Server, config *config.Config) error {
-	// TODO: адрес из конфига брать
-	listen, err := net.Listen("tcp", ":3200")
+	listen, err := net.Listen("tcp", config.GrpcServerAddress)
 	if err != nil {
 		logger.Log.Error(err)
 	}
 
-	logger.Log.Info("gRPC server started")
+	logger.Log.Info(fmt.Sprintf("gRPC server started on %s", config.GrpcServerAddress))
 
 	return server.Serve(listen)
 }
