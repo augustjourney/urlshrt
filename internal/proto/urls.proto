@@ -4,7 +4,6 @@ option go_package = "./";
 
 message CreateRequest {
   string original_url = 1;
-  string user_id = 2;
 }
 
 message CreateResponse {
@@ -37,9 +36,7 @@ message CreateBatchResponse {
   repeated BatchURLResult urls = 1;
 }
 
-message GetUserURLsRequest {
-  string user_id = 1;
-}
+message GetUserURLsRequest {}
 
 message UserURL {
   string short_url = 1;

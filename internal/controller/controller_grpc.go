@@ -42,11 +42,17 @@ func (c *GrpcController) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetRe
 func (c *GrpcController) Create(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error) {
 	var res pb.CreateResponse
 
+	user, err := c.getUserFromMetadata(ctx)
+
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
+
 	if req.OriginalUrl == "" {
 		return &res, status.Errorf(codes.InvalidArgument, "original url is required")
 	}
 
-	result, err := c.service.Shorten(req.OriginalUrl, req.UserId)
+	result, err := c.service.Shorten(req.OriginalUrl, user)
 	if err != nil {
 		return &res, status.Errorf(codes.Internal, err.Error())
 	}
@@ -63,6 +69,12 @@ func (c *GrpcController) Create(ctx context.Context, req *pb.CreateRequest) (*pb
 func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchRequest) (*pb.CreateBatchResponse, error) {
 	var res pb.CreateBatchResponse
 
+	user, err := c.getUserFromMetadata(ctx)
+
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
+
 	if len(res.Urls) == 0 {
 		return &res, status.Errorf(codes.InvalidArgument, "no urls provided")
 	}
@@ -78,7 +90,7 @@ func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchReq
 		}
 	}
 
-	result, err := c.service.ShortenBatch(body, "user_id")
+	result, err := c.service.ShortenBatch(body, user)
 	if err != nil {
 		return &res, status.Errorf(codes.Internal, err.Error())
 	}
@@ -96,7 +108,13 @@ func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchReq
 func (c *GrpcController) GetUserURLs(ctx context.Context, req *pb.GetUserURLsRequest) (*pb.GetUserURLsResponse, error) {
 	var res pb.GetUserURLsResponse
 
-	urls, err := c.service.GetUserURLs(context.Background(), req.UserId)
+	user, err := c.getUserFromMetadata(ctx)
+
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
+
+	urls, err := c.service.GetUserURLs(context.Background(), user)
 
 	if err != nil {
 		return &res, status.Errorf(codes.Internal, err.Error())
