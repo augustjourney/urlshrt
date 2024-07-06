@@ -128,7 +128,7 @@ func (r *Repo) GetStats(ctx context.Context) (storage.Stats, error) {
 	query := `
 		select 
 			(select count(*) from urls) as urls_count, 
-			(select distinct (user_uuid) count(*) from urls) as users_count;
+			(select count(*) from (select distinct user_uuid from urls) as users_count) as users_count;
 	`
 
 	row := r.db.QueryRowContext(ctx, query)
