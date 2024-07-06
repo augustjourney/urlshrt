@@ -6,6 +6,7 @@ import (
 	pb "github.com/augustjourney/urlshrt/internal/proto"
 	"github.com/augustjourney/urlshrt/internal/service"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -95,11 +96,35 @@ func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchReq
 func (c *GrpcController) GetUserURLs(ctx context.Context, req *pb.GetUserURLsRequest) (*pb.GetUserURLsResponse, error) {
 	var res pb.GetUserURLsResponse
 
+	urls, err := c.service.GetUserURLs(context.Background(), req.UserId)
+
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
+
+	for _, url := range urls {
+		res.Urls = append(res.Urls, &pb.UserURL{
+			ShortUrl:    url.ShortURL,
+			OriginalUrl: url.OriginalURL,
+		})
+	}
+
 	return &res, nil
 }
 
 func (c *GrpcController) DeleteBatch(ctx context.Context, req *pb.DeleteBatchRequest) (*pb.DeleteBatchResponse, error) {
 	var res pb.DeleteBatchResponse
+
+	user, err := c.getUserFromMetadata(ctx)
+
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
+
+	err = c.service.DeleteBatch(ctx, req.ShortUrls, user)
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
 
 	return &res, nil
 }
@@ -107,7 +132,40 @@ func (c *GrpcController) DeleteBatch(ctx context.Context, req *pb.DeleteBatchReq
 func (c *GrpcController) GetStats(ctx context.Context, req *pb.GetStatsRequest) (*pb.GetStatsResponse, error) {
 	var res pb.GetStatsResponse
 
+	stats, err := c.service.GetStats(context.Background())
+	if err != nil {
+		return &res, status.Errorf(codes.Internal, err.Error())
+	}
+
+	res.Urls = int32(stats.Urls)
+	res.Users = int32(stats.Users)
+
 	return &res, nil
+}
+
+// получает пользователя из gprc metadata context
+func (c *GrpcController) getUserFromMetadata(ctx context.Context) (string, error) {
+	var user string
+
+	md, ok := metadata.FromIncomingContext(ctx)
+
+	if !ok {
+		return user, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	values := md.Get("user")
+
+	if len(values) == 0 {
+		return user, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	user = values[0]
+
+	if user == "" {
+		return user, status.Errorf(codes.Unauthenticated, "user is not provided")
+	}
+
+	return user, nil
 }
 
 // Создает новый экземпляр grpc-контроллера
