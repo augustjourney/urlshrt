@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/augustjourney/urlshrt/internal/config"
+	"github.com/augustjourney/urlshrt/internal/interceptors"
 	"github.com/augustjourney/urlshrt/internal/logger"
 	"github.com/augustjourney/urlshrt/internal/middleware"
 	pb "github.com/augustjourney/urlshrt/internal/proto"
@@ -79,7 +80,9 @@ func RunHTTPS(app *fiber.App, config *config.Config) error {
 }
 
 func NewGrpcApp(controller pb.URLServiceServer) *grpc.Server {
-	server := grpc.NewServer()
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		grpc.UnaryServerInterceptor(interceptors.LogRequests),
+	))
 	pb.RegisterURLServiceServer(server, controller)
 	return server
 }
