@@ -45,7 +45,7 @@ func (c *GrpcController) Create(ctx context.Context, req *pb.CreateRequest) (*pb
 	user, err := c.getUserFromMetadata(ctx)
 
 	if err != nil {
-		return &res, status.Errorf(codes.Internal, err.Error())
+		return &res, err
 	}
 
 	if req.OriginalUrl == "" {
@@ -72,7 +72,7 @@ func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchReq
 	user, err := c.getUserFromMetadata(ctx)
 
 	if err != nil {
-		return &res, status.Errorf(codes.Internal, err.Error())
+		return &res, err
 	}
 
 	if len(res.Urls) == 0 {
@@ -111,7 +111,7 @@ func (c *GrpcController) GetUserURLs(ctx context.Context, req *pb.GetUserURLsReq
 	user, err := c.getUserFromMetadata(ctx)
 
 	if err != nil {
-		return &res, status.Errorf(codes.Internal, err.Error())
+		return &res, err
 	}
 
 	urls, err := c.service.GetUserURLs(context.Background(), user)
@@ -136,7 +136,7 @@ func (c *GrpcController) DeleteBatch(ctx context.Context, req *pb.DeleteBatchReq
 	user, err := c.getUserFromMetadata(ctx)
 
 	if err != nil {
-		return &res, status.Errorf(codes.Internal, err.Error())
+		return &res, err
 	}
 
 	err = c.service.DeleteBatch(ctx, req.ShortUrls, user)
