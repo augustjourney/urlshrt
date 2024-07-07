@@ -82,6 +82,7 @@ func RunHTTPS(app *fiber.App, config *config.Config) error {
 func NewGrpcApp(controller pb.URLServiceServer) *grpc.Server {
 	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		grpc.UnaryServerInterceptor(interceptors.LogRequests),
+		grpc.UnaryServerInterceptor(interceptors.IPInTrustedSubnet),
 	))
 	pb.RegisterURLServiceServer(server, controller)
 	return server
