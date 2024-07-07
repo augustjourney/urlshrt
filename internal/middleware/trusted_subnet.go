@@ -20,7 +20,7 @@ func IPInTrustedSubnet(ctx *fiber.Ctx) error {
 	cfg := config.New()
 
 	if cfg.TrustedSubnet == "" {
-		return ctx.SendStatus(http.StatusForbidden)
+		return ctx.Next()
 	}
 
 	_, subnet, err := net.ParseCIDR(cfg.TrustedSubnet)
