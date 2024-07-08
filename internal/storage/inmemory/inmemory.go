@@ -47,10 +47,15 @@ func (r *Repo) Get(ctx context.Context, short string) (*storage.URL, error) {
 
 // получает внутренню статистику: количество сохранненых ссылок и количество пользователей
 func (r *Repo) GetStats(ctx context.Context) (storage.Stats, error) {
-	urlsCount := len(UrlsInMemory)
+	var urlsCount int
 	users := make(map[string]bool)
 	for i := 0; i < len(UrlsInMemory); i++ {
-		users[UrlsInMemory[i].UserUUID] = true
+		if UrlsInMemory[i].UserUUID != "" {
+			users[UrlsInMemory[i].UserUUID] = true
+		}
+		if UrlsInMemory[i].Short != "" {
+			urlsCount++
+		}
 	}
 	usersCount := len(users)
 	return storage.Stats{
