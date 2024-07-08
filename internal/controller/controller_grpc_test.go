@@ -13,9 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 	"net"
+	"regexp"
 	"testing"
 )
 
@@ -60,7 +62,7 @@ func newGrpcAppInstance() (pb.URLServiceClient, storage.IRepo, service.Service, 
 }
 
 func TestGrpcController_Get(t *testing.T) {
-
+	t.Parallel()
 	client, repo, _, cleanup := newGrpcAppInstance()
 
 	t.Cleanup(cleanup)
@@ -121,4 +123,93 @@ func TestGrpcController_Get(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGrpcController_Create(t *testing.T) {
+	t.Parallel()
+	client, _, _, cleanup := newGrpcAppInstance()
+
+	t.Cleanup(cleanup)
+
+	tests := []struct {
+		name        string
+		code        codes.Code
+		originalURL string
+	}{
+		{
+			name:        "URL created",
+			code:        codes.OK,
+			originalURL: "http://yandex.ru?q=09123123gg",
+		},
+		{
+			name:        "URL created with conflict",
+			originalURL: "http://yandex.ru?q=09123123gg",
+			code:        codes.AlreadyExists,
+		},
+		{
+			name:        "Empty body",
+			originalURL: "",
+			code:        codes.InvalidArgument,
+		},
+	}
+
+	md := metadata.New(map[string]string{
+		"user": "user-uuid-0123",
+	})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := client.Create(ctx, &pb.CreateRequest{
+				OriginalUrl: tt.originalURL,
+			})
+			if tt.code == codes.OK {
+				require.NoError(t, err)
+				shortMatch, err := regexp.Match(`\/\w+$`, []byte(resp.ShortUrl))
+				require.NoError(t, err)
+				assert.True(t, shortMatch)
+			} else {
+				errCode, ok := status.FromError(err)
+				assert.True(t, ok)
+				assert.Equal(t, tt.code, errCode.Code())
+			}
+		})
+	}
+}
+
+func TestGrpcController_GetStats(t *testing.T) {
+	t.Parallel()
+	client, repo, _, cleanup := newGrpcAppInstance()
+	t.Cleanup(cleanup)
+
+	ctx := context.Background()
+
+	resp, err := client.GetStats(ctx, &pb.GetStatsRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(0), resp.Users)
+	assert.Equal(t, int32(0), resp.Urls)
+
+	repo.Create(ctx, storage.URL{
+		Short:    "123123....=/",
+		Original: "http://google.com?q=1cv23sdfadsfsf",
+		UUID:     "uid-cxvxv",
+		UserUUID: "user-uuid-0123",
+	})
+
+	resp, err = client.GetStats(ctx, &pb.GetStatsRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), resp.Users)
+	assert.Equal(t, int32(1), resp.Urls)
+
+	repo.Create(context.TODO(), storage.URL{
+		Short:    "123123zxcv23.=cv",
+		Original: "http://google.com?q=1cvzxccv4f45hbgf563sfsf",
+		UUID:     "uid-cxvxv-zxvzcv",
+		UserUUID: "user-uuid-0123",
+	})
+
+	resp, err = client.GetStats(ctx, &pb.GetStatsRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), resp.Users)
+	assert.Equal(t, int32(2), resp.Urls)
 }
