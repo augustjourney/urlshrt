@@ -288,3 +288,58 @@ func TestGrpcController_CreateBatch(t *testing.T) {
 		})
 	}
 }
+
+func TestGrpcController_GetUserURLs(t *testing.T) {
+	t.Parallel()
+	client, repo, _, cleanup := newGrpcAppInstance()
+	t.Cleanup(cleanup)
+
+	userId1 := "user-uuid-1-010987"
+	userId2 := "user-uuid-2-530234"
+	userId3 := "user-uuid-3-109238"
+
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "01",
+		UserUUID: userId1,
+		Original: "http://google.com?q=1cv23sdfadsfsf",
+		Short:    "0zcvzcxvzvzv",
+	})
+
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "02",
+		UserUUID: userId1,
+		Original: "http://google.com?q=0zxvci4j;reqi9",
+		Short:    "0zxcvio;443;jv",
+	})
+
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "03",
+		UserUUID: userId2,
+		Original: "http://google.com?q=v0xcvizcv235445",
+		Short:    "23lknasfe0234=",
+	})
+
+	md1 := metadata.New(map[string]string{
+		"user": userId1,
+	})
+
+	md2 := metadata.New(map[string]string{
+		"user": userId2,
+	})
+
+	md3 := metadata.New(map[string]string{
+		"user": userId3,
+	})
+
+	resp, err := client.GetUserURLs(metadata.NewOutgoingContext(context.Background(), md1), &pb.GetUserURLsRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(resp.Urls))
+
+	resp, err = client.GetUserURLs(metadata.NewOutgoingContext(context.Background(), md2), &pb.GetUserURLsRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(resp.Urls))
+
+	resp, err = client.GetUserURLs(metadata.NewOutgoingContext(context.Background(), md3), &pb.GetUserURLsRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(resp.Urls))
+}
