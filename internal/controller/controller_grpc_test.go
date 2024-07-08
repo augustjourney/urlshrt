@@ -343,3 +343,107 @@ func TestGrpcController_GetUserURLs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, len(resp.Urls))
 }
+
+func TestGrpcController_DeleteBatch(t *testing.T) {
+	t.Parallel()
+	client, repo, _, cleanup := newGrpcAppInstance()
+	t.Cleanup(cleanup)
+
+	userId1 := "user-uuid-123kfmv"
+	userId2 := "user-uuid-0zxc23l"
+	userId3 := "user-uuid-5kmvzx0"
+
+	// создаем урлы для пользователя 1
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "011",
+		UserUUID: userId1,
+		Original: "http://google.com?q=1cv23sdfddsasdadsfsf",
+		Short:    "0zcvzcxvzvzv12333",
+	})
+
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "022",
+		UserUUID: userId1,
+		Original: "http://google.com?q=0zxvci4234j;reqi9",
+		Short:    "0zxcvio;443;jv445234",
+	})
+
+	// создаем урлы для пользователя 2
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "033",
+		UserUUID: userId2,
+		Original: "http://google.com?q=v0xcvizcvcvvcv235445",
+		Short:    "23lknasfe0234=s3443",
+	})
+
+	// создаем урлы для пользователя 3
+	repo.Create(context.TODO(), storage.URL{
+		UUID:     "044",
+		UserUUID: userId3,
+		Original: "http://google.com?q=v0xlaowqx102",
+		Short:    "lvl02sd9923=1ks",
+	})
+
+	// фиксируем количество урлов у пользователя 1
+	urls, _ := repo.GetByUserUUID(context.Background(), userId1)
+
+	require.NotNil(t, urls)
+
+	initialUrlsLength := len(*urls)
+
+	// удаляем 2 урла у пользователя 1
+	md := metadata.New(map[string]string{
+		"user": userId1,
+	})
+
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	_, err := client.DeleteBatch(ctx, &pb.DeleteBatchRequest{
+		ShortUrls: []string{"0zcvzcxvzvzv12333", "0zxcvio;443;jv445234"},
+	})
+
+	require.NoError(t, err)
+
+	// получаем урлы, которые остались у пользователя 1
+	urls, _ = repo.GetByUserUUID(context.Background(), userId1)
+
+	require.NotNil(t, urls)
+
+	doneUrlsLength := len(*urls)
+
+	// должно остаться initialUrlsLength - 2
+	// так как 2 урла удалили
+	assert.Equal(t, doneUrlsLength, initialUrlsLength-2)
+
+	// удаляем 1 урл у пользователя 2
+	md2 := metadata.New(map[string]string{
+		"user": userId2,
+	})
+
+	ctx2 := metadata.NewOutgoingContext(context.Background(), md2)
+
+	_, err = client.DeleteBatch(ctx2, &pb.DeleteBatchRequest{
+		ShortUrls: []string{"23lknasfe0234=s3443"},
+	})
+
+	require.NoError(t, err)
+
+	// получаем урлы, которые остались у пользователя 2
+	urls, _ = repo.GetByUserUUID(context.Background(), userId2)
+
+	require.NotNil(t, urls)
+
+	doneUrlsLength = len(*urls)
+
+	// должно остаться 0 урлов
+	// так как был 1 урл и 1 урл удалили
+	assert.Equal(t, doneUrlsLength, 0)
+
+	// проверяем урлы пользователя 3
+	// должно остаться, как и было — 1
+	urls, _ = repo.GetByUserUUID(context.Background(), userId3)
+
+	require.NotNil(t, urls)
+
+	assert.Equal(t, len(*urls), 1)
+}
