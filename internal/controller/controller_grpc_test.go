@@ -213,3 +213,78 @@ func TestGrpcController_GetStats(t *testing.T) {
 	assert.Equal(t, int32(1), resp.Users)
 	assert.Equal(t, int32(2), resp.Urls)
 }
+
+func TestGrpcController_CreateBatch(t *testing.T) {
+	t.Parallel()
+	client, _, _, cleanup := newGrpcAppInstance()
+	t.Cleanup(cleanup)
+
+	tests := []struct {
+		name             string
+		body             []*pb.BatchURL
+		code             codes.Code
+		resultUrlsLength int
+	}{
+		{
+			name: "Batch URL created",
+			body: []*pb.BatchURL{
+				&pb.BatchURL{
+					OriginalUrl:   "http://yandex.ru/123123",
+					CorrelationId: "1",
+				},
+				&pb.BatchURL{
+					OriginalUrl:   "http://vk.com/12322222",
+					CorrelationId: "2",
+				},
+				&pb.BatchURL{
+					OriginalUrl:   "http://ya.ru/123000000",
+					CorrelationId: "3",
+				},
+			},
+			resultUrlsLength: 3,
+			code:             codes.OK,
+		},
+		{
+			name:             "Batch URL Bad Request — Emtpy Urls",
+			resultUrlsLength: 0,
+			body:             []*pb.BatchURL{},
+			code:             codes.InvalidArgument,
+		},
+		{
+			name: "Batch URL Created — Only With Correlation ID",
+			body: []*pb.BatchURL{
+				&pb.BatchURL{
+					OriginalUrl:   "http://yandex.ru/015432",
+					CorrelationId: "1",
+				},
+				&pb.BatchURL{
+					OriginalUrl:   "http://vk.com/vv0v",
+					CorrelationId: "",
+				},
+			},
+			resultUrlsLength: 1,
+			code:             codes.OK,
+		},
+	}
+
+	md := metadata.New(map[string]string{
+		"user": "user-uuid-010987",
+	})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := client.CreateBatch(ctx, &pb.CreateBatchRequest{
+				Urls: tt.body,
+			})
+			if tt.code == codes.OK {
+				require.NoError(t, err)
+				assert.Equal(t, tt.resultUrlsLength, len(resp.Urls))
+			} else {
+				errCode, ok := status.FromError(err)
+				assert.True(t, ok)
+				assert.Equal(t, tt.code, errCode.Code())
+			}
+		})
+	}
+}

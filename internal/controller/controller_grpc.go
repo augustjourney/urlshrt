@@ -75,7 +75,7 @@ func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchReq
 		return &res, err
 	}
 
-	if len(res.Urls) == 0 {
+	if len(req.Urls) == 0 {
 		return &res, status.Errorf(codes.InvalidArgument, "no urls provided")
 	}
 
