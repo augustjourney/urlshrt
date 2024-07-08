@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
@@ -45,7 +46,7 @@ func newGrpcAppInstance() (pb.URLServiceClient, storage.IRepo, service.Service, 
 		return listener.Dial()
 	}
 
-	conn, err := grpc.DialContext(context.Background(), "bufconn", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
