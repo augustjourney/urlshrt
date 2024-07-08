@@ -50,10 +50,10 @@ func main() {
 
 	urlService := service.New(repo, config)
 
-	httpController := controller.NewHttpController(&urlService)
+	httpController := controller.NewHTTPController(&urlService)
 	grpcController := controller.NewGrpcController(&urlService)
 
-	httpServer := app.NewHttpApp(httpController, db)
+	httpServer := app.NewHTTPApp(httpController, db)
 	grpcServer := app.NewGrpcApp(grpcController)
 
 	go func() {

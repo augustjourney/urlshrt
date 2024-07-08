@@ -294,41 +294,41 @@ func TestGrpcController_GetUserURLs(t *testing.T) {
 	client, repo, _, cleanup := newGrpcAppInstance()
 	t.Cleanup(cleanup)
 
-	userId1 := "user-uuid-1-010987"
-	userId2 := "user-uuid-2-530234"
-	userId3 := "user-uuid-3-109238"
+	userID1 := "user-uuid-1-010987"
+	userID2 := "user-uuid-2-530234"
+	userID3 := "user-uuid-3-109238"
 
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "01",
-		UserUUID: userId1,
+		UserUUID: userID1,
 		Original: "http://google.com?q=1cv23sdfadsfsf",
 		Short:    "0zcvzcxvzvzv",
 	})
 
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "02",
-		UserUUID: userId1,
+		UserUUID: userID1,
 		Original: "http://google.com?q=0zxvci4j;reqi9",
 		Short:    "0zxcvio;443;jv",
 	})
 
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "03",
-		UserUUID: userId2,
+		UserUUID: userID2,
 		Original: "http://google.com?q=v0xcvizcv235445",
 		Short:    "23lknasfe0234=",
 	})
 
 	md1 := metadata.New(map[string]string{
-		"user": userId1,
+		"user": userID1,
 	})
 
 	md2 := metadata.New(map[string]string{
-		"user": userId2,
+		"user": userID2,
 	})
 
 	md3 := metadata.New(map[string]string{
-		"user": userId3,
+		"user": userID3,
 	})
 
 	resp, err := client.GetUserURLs(metadata.NewOutgoingContext(context.Background(), md1), &pb.GetUserURLsRequest{})
@@ -349,21 +349,21 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 	client, repo, _, cleanup := newGrpcAppInstance()
 	t.Cleanup(cleanup)
 
-	userId1 := "user-uuid-123kfmv"
-	userId2 := "user-uuid-0zxc23l"
-	userId3 := "user-uuid-5kmvzx0"
+	userID1 := "user-uuid-123kfmv"
+	userID2 := "user-uuid-0zxc23l"
+	userID3 := "user-uuid-5kmvzx0"
 
 	// создаем урлы для пользователя 1
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "011",
-		UserUUID: userId1,
+		UserUUID: userID1,
 		Original: "http://google.com?q=1cv23sdfddsasdadsfsf",
 		Short:    "0zcvzcxvzvzv12333",
 	})
 
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "022",
-		UserUUID: userId1,
+		UserUUID: userID1,
 		Original: "http://google.com?q=0zxvci4234j;reqi9",
 		Short:    "0zxcvio;443;jv445234",
 	})
@@ -371,7 +371,7 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 	// создаем урлы для пользователя 2
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "033",
-		UserUUID: userId2,
+		UserUUID: userID2,
 		Original: "http://google.com?q=v0xcvizcvcvvcv235445",
 		Short:    "23lknasfe0234=s3443",
 	})
@@ -379,13 +379,13 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 	// создаем урлы для пользователя 3
 	repo.Create(context.TODO(), storage.URL{
 		UUID:     "044",
-		UserUUID: userId3,
+		UserUUID: userID3,
 		Original: "http://google.com?q=v0xlaowqx102",
 		Short:    "lvl02sd9923=1ks",
 	})
 
 	// фиксируем количество урлов у пользователя 1
-	urls, _ := repo.GetByUserUUID(context.Background(), userId1)
+	urls, _ := repo.GetByUserUUID(context.Background(), userID1)
 
 	require.NotNil(t, urls)
 
@@ -393,7 +393,7 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 
 	// удаляем 2 урла у пользователя 1
 	md := metadata.New(map[string]string{
-		"user": userId1,
+		"user": userID1,
 	})
 
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
@@ -405,7 +405,7 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 	require.NoError(t, err)
 
 	// получаем урлы, которые остались у пользователя 1
-	urls, _ = repo.GetByUserUUID(context.Background(), userId1)
+	urls, _ = repo.GetByUserUUID(context.Background(), userID1)
 
 	require.NotNil(t, urls)
 
@@ -417,7 +417,7 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 
 	// удаляем 1 урл у пользователя 2
 	md2 := metadata.New(map[string]string{
-		"user": userId2,
+		"user": userID2,
 	})
 
 	ctx2 := metadata.NewOutgoingContext(context.Background(), md2)
@@ -429,7 +429,7 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 	require.NoError(t, err)
 
 	// получаем урлы, которые остались у пользователя 2
-	urls, _ = repo.GetByUserUUID(context.Background(), userId2)
+	urls, _ = repo.GetByUserUUID(context.Background(), userID2)
 
 	require.NotNil(t, urls)
 
@@ -441,7 +441,7 @@ func TestGrpcController_DeleteBatch(t *testing.T) {
 
 	// проверяем урлы пользователя 3
 	// должно остаться, как и было — 1
-	urls, _ = repo.GetByUserUUID(context.Background(), userId3)
+	urls, _ = repo.GetByUserUUID(context.Background(), userID3)
 
 	require.NotNil(t, urls)
 

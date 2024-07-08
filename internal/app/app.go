@@ -37,7 +37,7 @@ type GrpcController interface {
 }
 
 // Создает новый экземпляр приложения
-func NewHttpApp(c Controller, db *sql.DB) *fiber.App {
+func NewHTTPApp(c Controller, db *sql.DB) *fiber.App {
 	app := fiber.New()
 
 	app.Use(middleware.RequestCompress)

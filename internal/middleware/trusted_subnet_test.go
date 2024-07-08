@@ -25,6 +25,8 @@ func TestIPInTrustedSubnet(t *testing.T) {
 
 	resp, err := app.Test(req, 1)
 
+	defer resp.Body.Close()
+
 	require.NoError(t, err)
 
 	assert.NotEqual(t, http.StatusForbidden, resp.StatusCode)
@@ -43,6 +45,7 @@ func TestIPInTrustedSubnetWithIpNotInSubnet(t *testing.T) {
 	req.Header.Set("X-Real-IP", "192.168.0.1")
 
 	resp, err := app.Test(req, 1)
+	defer resp.Body.Close()
 
 	require.NoError(t, err)
 
@@ -57,6 +60,7 @@ func TestIPInTrustedSubnetWithEmptyIp(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 
 	resp, err := app.Test(req, 1)
+	defer resp.Body.Close()
 
 	require.NoError(t, err)
 

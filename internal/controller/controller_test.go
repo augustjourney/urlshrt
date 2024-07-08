@@ -32,9 +32,9 @@ func newAppInstance() (*fiber.App, storage.IRepo, service.Service) {
 
 	repo := inmemory.New()
 	urlService := service.New(repo, cfg)
-	controller := NewHttpController(&urlService)
+	controller := NewHTTPController(&urlService)
 
-	httpApp := app.NewHttpApp(controller, nil)
+	httpApp := app.NewHTTPApp(controller, nil)
 
 	return httpApp, repo, urlService
 }
