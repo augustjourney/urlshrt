@@ -81,6 +81,14 @@ func (c *GrpcController) CreateBatch(ctx context.Context, req *pb.CreateBatchReq
 
 	body := make([]service.BatchURL, 0)
 
+	// TODO: как убрать конвертации типов для req.Urls и на выходе здесь в result
+	// Если я хочу использовать service — в http controller и grpc controller,
+	// То в grpc приходится конвертировать типы, потому что при генерации proto-файлов
+	// генерируются свои типы
+	// И хоть один одинаковые по структуре с типами в service — go их считает разными
+	// И получится — два дополнительных обхода слайса
+	// Может, использовать типы, сгенерированные grpc proto, и в service, http controller
+	// Будет ли это правильно. И получится ли туда вставить свои json-теги
 	for _, url := range req.Urls {
 		if url != nil {
 			body = append(body, service.BatchURL{
