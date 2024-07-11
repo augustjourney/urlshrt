@@ -29,7 +29,7 @@ func newGrpcAppInstance() (pb.URLServiceClient, storage.IRepo, service.Service, 
 	repo := inmemory.New()
 	urlService := service.New(repo, cfg)
 	controller := NewGrpcController(&urlService)
-	grpcServer := app.NewGrpcApp(controller)
+	grpcServer := app.NewGrpcServer(controller)
 
 	// Соединение для тестирования
 	listener := bufconn.Listen(1024 * 1024)
