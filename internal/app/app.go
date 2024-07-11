@@ -37,7 +37,7 @@ type GrpcController interface {
 }
 
 // Создает новый экземпляр приложения
-func NewHTTPApp(c Controller, db *sql.DB) *fiber.App {
+func NewHTTPServer(c Controller, db *sql.DB) *fiber.App {
 	app := fiber.New()
 
 	app.Use(middleware.RequestCompress)
@@ -79,7 +79,7 @@ func RunHTTPS(app *fiber.App, config *config.Config) error {
 	return app.ListenTLS(config.ServerAddress, pem, key)
 }
 
-func NewGrpcApp(controller pb.URLServiceServer) *grpc.Server {
+func NewGrpcServer(controller pb.URLServiceServer) *grpc.Server {
 	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		grpc.UnaryServerInterceptor(interceptors.LogRequests),
 		grpc.UnaryServerInterceptor(interceptors.IPInTrustedSubnet),

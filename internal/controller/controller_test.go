@@ -34,9 +34,9 @@ func newAppInstance() (*fiber.App, storage.IRepo, service.Service) {
 	urlService := service.New(repo, cfg)
 	controller := NewHTTPController(&urlService)
 
-	httpApp := app.NewHTTPApp(controller, nil)
+	httpServer := app.NewHTTPServer(controller, nil)
 
-	return httpApp, repo, urlService
+	return httpServer, repo, urlService
 }
 
 func TestGetURL(t *testing.T) {

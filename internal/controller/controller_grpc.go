@@ -122,7 +122,7 @@ func (c *GrpcController) GetUserURLs(ctx context.Context, req *pb.GetUserURLsReq
 		return &res, err
 	}
 
-	urls, err := c.service.GetUserURLs(context.Background(), user)
+	urls, err := c.service.GetUserURLs(ctx, user)
 
 	if err != nil {
 		return &res, status.Errorf(codes.Internal, err.Error())

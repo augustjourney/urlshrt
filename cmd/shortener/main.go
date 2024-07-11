@@ -53,8 +53,8 @@ func main() {
 	httpController := controller.NewHTTPController(&urlService)
 	grpcController := controller.NewGrpcController(&urlService)
 
-	httpServer := app.NewHTTPApp(httpController, db)
-	grpcServer := app.NewGrpcApp(grpcController)
+	httpServer := app.NewHTTPServer(httpController, db)
+	grpcServer := app.NewGrpcServer(grpcController)
 
 	go func() {
 		if config.EnableHTTPS {
