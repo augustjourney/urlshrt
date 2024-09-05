@@ -48,13 +48,17 @@ func main() {
 		repo = infile.New(config)
 	}
 
-	service := service.New(repo, config)
-	controller := controller.New(&service)
-	server := app.New(&controller, db)
+	urlService := service.New(repo, config)
+
+	httpController := controller.NewHTTPController(&urlService)
+	grpcController := controller.NewGrpcController(&urlService)
+
+	httpServer := app.NewHTTPServer(httpController, db)
+	grpcServer := app.NewGrpcServer(grpcController)
 
 	go func() {
 		if config.EnableHTTPS {
-			err = app.RunHTTPS(server, config)
+			err = app.RunHTTPS(httpServer, config)
 			// Если происходит ошибка — просто логируем ее
 			// И запускаем на http
 			if err != nil {
@@ -62,7 +66,14 @@ func main() {
 			}
 		}
 
-		err = app.RunHTTP(server, config)
+		err = app.RunHTTP(httpServer, config)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		err = app.RunGRPC(grpcServer, config)
 		if err != nil {
 			panic(err)
 		}
@@ -76,7 +87,8 @@ func main() {
 
 	logger.Log.Info("Gracefully shutting down...")
 
-	server.ShutdownWithTimeout(10 * time.Second)
+	httpServer.ShutdownWithTimeout(10 * time.Second)
+	grpcServer.GracefulStop()
 
 	logger.Log.Info("Closing connections...")
 

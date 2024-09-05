@@ -27,16 +27,16 @@ import (
 )
 
 func newAppInstance() (*fiber.App, storage.IRepo, service.Service) {
-	config := config.New()
+	cfg := config.New()
 	logger.New()
 
 	repo := inmemory.New()
-	service := service.New(repo, config)
-	controller := New(&service)
+	urlService := service.New(repo, cfg)
+	controller := NewHTTPController(&urlService)
 
-	app := app.New(&controller, nil)
+	httpServer := app.NewHTTPServer(controller, nil)
 
-	return app, repo, service
+	return httpServer, repo, urlService
 }
 
 func TestGetURL(t *testing.T) {
@@ -133,7 +133,7 @@ func TestGetURL(t *testing.T) {
 			url := "/" + tt.shortURL
 			req, err := http.NewRequest(tt.method, url, nil)
 			require.NoError(t, err)
-			res, err := app.Test(req, 1)
+			res, err := app.Test(req, 10)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			res.Body.Close()

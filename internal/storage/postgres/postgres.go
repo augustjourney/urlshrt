@@ -121,6 +121,23 @@ func (r *Repo) CreateBatch(ctx context.Context, urls []storage.URL) error {
 	return tx.Commit()
 }
 
+// получает внутренню статистику: количество сохранненых ссылок в бд и количество пользователей
+func (r *Repo) GetStats(ctx context.Context) (storage.Stats, error) {
+	var stats storage.Stats
+
+	query := `
+		select 
+			(select count(*) from urls) as urls_count, 
+			(select count(*) from (select distinct user_uuid from urls) as users_count) as users_count;
+	`
+
+	row := r.db.QueryRowContext(ctx, query)
+
+	err := row.Scan(&stats.UrlsCount, &stats.UsersCount)
+
+	return stats, err
+}
+
 // удаляет ссылку из бд
 func (r *Repo) Delete(ctx context.Context, shortURLs []string, userID string) error {
 	tx, err := r.db.Begin()

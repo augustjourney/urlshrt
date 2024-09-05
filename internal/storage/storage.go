@@ -16,6 +16,14 @@ type URL struct {
 	IsDeleted bool
 }
 
+// хранит информацию о статистике:
+// количество сохраненных ссылок
+// и количество пользователей
+type Stats struct {
+	UrlsCount  int `json:"urls" db:"urls_count"`
+	UsersCount int `json:"users" db:"users_count"`
+}
+
 // описывает методы хранилища
 type IRepo interface {
 	Create(ctx context.Context, url URL) error
@@ -24,6 +32,7 @@ type IRepo interface {
 	CreateBatch(ctx context.Context, urls []URL) error
 	GetByUserUUID(ctx context.Context, userUUID string) (*[]URL, error)
 	Delete(ctx context.Context, short []string, userID string) error
+	GetStats(ctx context.Context) (Stats, error)
 }
 
 // ошибка если ссылка уже существует

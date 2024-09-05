@@ -37,6 +37,7 @@ type IService interface {
 	GenerateID() (string, error)
 	GetUserURLs(ctx context.Context, userUUID string) ([]UserURLResult, error)
 	DeleteBatch(ctx context.Context, shortIds []string, userID string) error
+	GetStats(ctx context.Context) (GetStatsResult, error)
 }
 
 // Результат сокращения ссылки
@@ -61,6 +62,28 @@ type BatchResultURL struct {
 type UserURLResult struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
+}
+
+// Результат получения внутренней статистики: количество ссылок, количество пользователей
+type GetStatsResult struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}
+
+// получает внутреннюю статистику: кол-во ссылок и пользователей
+func (s *Service) GetStats(ctx context.Context) (GetStatsResult, error) {
+	var result GetStatsResult
+	stats, err := s.repo.GetStats(ctx)
+
+	if err != nil {
+		logger.Log.Error("Could not get stats ", err)
+		return result, err
+	}
+
+	result.Urls = stats.UrlsCount
+	result.Users = stats.UsersCount
+
+	return result, nil
 }
 
 // генерирует случайный ID в формате строки UUID v4

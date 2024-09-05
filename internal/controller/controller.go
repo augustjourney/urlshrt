@@ -266,6 +266,21 @@ func (c *Controller) GetUserURLs(ctx *fiber.Ctx) error {
 
 }
 
+// обрабатывает http-запрос на получение внутренней статистикиы
+func (c *Controller) GetStats(ctx *fiber.Ctx) error {
+	stats, err := c.service.GetStats(context.Background())
+	if err != nil {
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
+
+	resp, err := json.Marshal(stats)
+	if err != nil {
+		return ctx.SendStatus(http.StatusInternalServerError)
+	}
+
+	return ctx.Status(http.StatusOK).Send(resp)
+}
+
 func (c *Controller) checkAuth(ctx *fiber.Ctx, createIfEmpty bool) (string, error) {
 	// ID пользователя может храниться
 	// Либо в заголовке Authorization
@@ -298,8 +313,8 @@ func (c *Controller) checkAuth(ctx *fiber.Ctx, createIfEmpty bool) (string, erro
 }
 
 // Создает новый экземпляр контроллера
-func New(service service.IService) Controller {
-	return Controller{
+func NewHTTPController(service service.IService) *Controller {
+	return &Controller{
 		service: service,
 	}
 }
